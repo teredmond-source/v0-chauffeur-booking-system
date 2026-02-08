@@ -5,11 +5,11 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const _inter = Inter({
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
-const _playfair = Playfair_Display({
+const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
 });
@@ -49,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${_inter.variable} ${_playfair.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body className="font-sans antialiased">
         {children}
         <Toaster richColors position="top-right" />
