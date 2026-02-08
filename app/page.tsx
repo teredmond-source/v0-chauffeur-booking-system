@@ -149,7 +149,7 @@ export default function Home() {
       <footer className="border-t border-border bg-card py-6">
         <div className="mx-auto max-w-7xl px-4 text-center lg:px-8">
           <p className="text-xs text-muted-foreground">
-            Redmond Chauffeur Drive - Booking & Dispatch System
+            Redmond Chauffeur Drive - Booking & Dispatch System v1.0
           </p>
         </div>
       </footer>
