@@ -5,10 +5,10 @@ import {
   Users, Car, Calendar, CalendarCheck, TrendingUp,
   RefreshCw, ChevronDown, ChevronUp, Loader2,
 } from "lucide-react";
-import { AppHeader } from "@/components/app-header";
-import { BookingForm } from "@/components/booking-form";
-import { StatCard } from "@/components/stat-card";
-import { NTAInfoPanel } from "@/components/nta-info-panel";
+import { AppHeader } from "./_components/app-header";
+import { BookingForm } from "./_components/booking-form";
+import { StatCard } from "./_components/stat-card";
+import { NTAInfoPanel } from "./_components/nta-info-panel";
 
 interface SheetRecord {
   [key: string]: string;
