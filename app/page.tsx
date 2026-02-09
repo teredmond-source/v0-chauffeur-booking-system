@@ -5,10 +5,8 @@ import {
   Users, Car, Calendar, Clock, CalendarCheck, TrendingUp,
   RefreshCw, ChevronDown, ChevronUp, Loader2,
 } from "lucide-react";
-import { AppHeader } from "@/components/app-header";
-import { BookingForm } from "@/components/booking-form";
-import { StatCard } from "@/components/stat-card";
-import { NTAInfoPanel } from "@/components/nta-info-panel";
+import { toast } from "sonner";
+import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -326,7 +324,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader />
+      {/* Header */}
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
+          <div>
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground">Redmond Chauffeur Drive</h1>
+            <p className="text-sm text-muted-foreground">Booking & Dispatch System</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-600">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            System Online
+          </span>
+        </div>
+      </header>
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">Booking Dashboard</h1>
@@ -334,20 +344,30 @@ export default function Home() {
         </div>
 
         <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard label="Today's Bookings" value="--" subtext="Connect Sheets to sync" icon={CalendarCheck} />
-          <StatCard
-            label="Active Drivers"
-            value={driversLoading ? "..." : drivers.length.toString()}
-            subtext={driversLoading ? "Loading..." : `${drivers.length} driver${drivers.length !== 1 ? "s" : ""} on file`}
-            icon={Users}
-          />
-          <StatCard
-            label="Fleet Vehicles"
-            value={vehiclesLoading ? "..." : vehicles.length.toString()}
-            subtext={vehiclesLoading ? "Loading..." : `${vehicles.length} vehicle${vehicles.length !== 1 ? "s" : ""} in fleet`}
-            icon={Car}
-          />
-          <StatCard label="Avg Fare" value="--" subtext="NTA 2026 rates" icon={TrendingUp} variant="accent" />
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10"><CalendarCheck className="h-5 w-5 text-accent" /></div>
+              <div><p className="text-2xl font-bold text-foreground">--</p><p className="text-xs text-muted-foreground">{"Today's Bookings"}</p></div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10"><Users className="h-5 w-5 text-accent" /></div>
+              <div><p className="text-2xl font-bold text-foreground">{driversLoading ? "..." : drivers.length}</p><p className="text-xs text-muted-foreground">Active Drivers</p></div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10"><Car className="h-5 w-5 text-accent" /></div>
+              <div><p className="text-2xl font-bold text-foreground">{vehiclesLoading ? "..." : vehicles.length}</p><p className="text-xs text-muted-foreground">Fleet Vehicles</p></div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/20"><TrendingUp className="h-5 w-5 text-accent" /></div>
+              <div><p className="text-2xl font-bold text-accent">--</p><p className="text-xs text-muted-foreground">Avg Fare (NTA 2026)</p></div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -359,14 +379,22 @@ export default function Home() {
                   Enter customer and route details. Fares are calculated automatically using Google Maps distance and NTA 2026 rates.
                 </p>
               </div>
-              <BookingForm />
+              <p className="text-xs text-muted-foreground">Booking form coming soon. Drivers & Vehicles loading from Google Sheets below.</p>
             </div>
           </div>
 
           <div className="space-y-6">
             <DriversPanel drivers={drivers} loading={driversLoading} error={driversError} onRefresh={fetchDrivers} />
             <VehiclesPanel vehicles={vehicles} loading={vehiclesLoading} error={vehiclesError} onRefresh={fetchVehicles} />
-            <NTAInfoPanel />
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">NTA 2026 Fare Reference</h3>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                <span>Initial charge (500m):</span><span className="font-medium text-foreground">EUR 4.20</span>
+                <span>Pre-booking fee:</span><span className="font-medium text-foreground">EUR 2.00</span>
+                <span>{"Tariff A (up to 15km):"}</span><span className="font-medium text-foreground">EUR 1.18/km</span>
+                <span>{"Tariff B (over 15km):"}</span><span className="font-medium text-foreground">EUR 1.54/km</span>
+              </div>
+            </div>
             <div className="rounded-xl border border-border bg-card p-5">
               <h3 className="mb-3 text-sm font-semibold text-foreground">Eircode Tips</h3>
               <ul className="space-y-2 text-xs leading-relaxed text-muted-foreground">
