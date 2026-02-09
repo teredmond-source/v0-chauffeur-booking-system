@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 export default function Home() {
-  console.log("[v0] Home page rendering");
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
