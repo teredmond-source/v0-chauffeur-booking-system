@@ -137,22 +137,12 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
             const status = driver["Current Status"] || "";
             const ntaId = driver["NTA Driver ID"] || "";
             const availableFrom = driver["Available From"] || "";
-            const profilePhoto = findPhotoUrl(driver, 80);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status.toLowerCase() === "on duty" || status === "";
             const allKeys = Object.keys(driver);
             return (
               <div key={idx} className="rounded-lg border border-border bg-secondary/30 hover:bg-secondary/60">
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
-                    {profilePhoto ? (
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-                        <img src={profilePhoto} alt={name} width={40} height={40} style={{ width: 40, height: 40, objectFit: "cover", display: "block" }} referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
-                      </div>
-                    ) : (
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
-                        {name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-                      </div>
-                    )}
                     <div>
                       <p className="text-sm font-medium text-foreground">{name}</p>
                       <div className="flex items-center gap-2">
@@ -177,11 +167,11 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                         const isUrl = val.startsWith("http://") || val.startsWith("https://");
                         const isImg = isUrl && isImageColumn(key, val);
                         if (isImg) {
-                          const directUrl = toDirectImageUrl(val, 400);
+                          const directUrl = toDirectImageUrl(val);
                           return (
                             <div key={key} className="text-xs">
                               <span className="font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-contain border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
@@ -281,7 +271,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
             const reg = vehicle["Registration"] || vehicle["Reg"] || "";
             const vType = vehicle["Type"] || vehicle["Vehicle Type"] || "";
             const status = vehicle["Status"] || vehicle["Current Status"] || "";
-            const vehiclePhoto = findPhotoUrl(vehicle, 80);
+            const vehiclePhoto = findPhotoUrl(vehicle);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status === "";
             const allKeys = Object.keys(vehicle);
             return (
@@ -289,9 +279,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {vehiclePhoto ? (
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-                        <img src={vehiclePhoto} alt={name} width={40} height={40} style={{ width: 40, height: 40, objectFit: "cover", display: "block" }} referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
-                      </div>
+                      <img src={vehiclePhoto} alt={name} className="h-10 w-10 shrink-0 rounded-md object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
                         <Car className="h-4 w-4 text-primary" />
@@ -316,11 +304,11 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                         const isUrl = val.startsWith("http://") || val.startsWith("https://");
                         const isImg = isUrl && isImageColumn(key, val);
                         if (isImg) {
-                          const directUrl = toDirectImageUrl(val, 400);
+                          const directUrl = toDirectImageUrl(val);
                           return (
                             <div key={key} className="text-xs">
                               <span className="font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-contain border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
