@@ -133,8 +133,8 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
           {drivers.map((driver, idx) => {
             const isExpanded = expandedDriver === idx;
             const firstName = driver["First Name"] || driver["first name"] || "";
-            const lastName = driver["Last Name"] || driver["Surname"] || driver["last name"] || "";
-            const name = driver["Name"] || (firstName && lastName ? `${firstName} ${lastName}` : firstName || Object.values(driver)[0]) || "Unknown";
+            const lastName = driver["Last Name"] || driver["Surname"] || driver["last name"] || driver["Name"] || "";
+            const name = (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || Object.values(driver)[0]) || "Unknown";
             const status = driver["Current Status"] || "";
             const ntaId = driver["NTA Driver ID"] || "";
             const availableFrom = driver["Available From"] || "";
@@ -172,7 +172,7 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                           return (
                             <div key={key} className="text-xs">
                               <span className="font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl || "/placeholder.svg"} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
@@ -280,7 +280,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {vehiclePhoto ? (
-                      <img src={vehiclePhoto} alt={name} className="h-10 w-10 shrink-0 rounded-md object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <img src={vehiclePhoto || "/placeholder.svg"} alt={name} className="h-10 w-10 shrink-0 rounded-md object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
                         <Car className="h-4 w-4 text-primary" />
@@ -309,7 +309,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                           return (
                             <div key={key} className="text-xs">
                               <span className="font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl || "/placeholder.svg"} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
