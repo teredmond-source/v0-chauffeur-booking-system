@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { AppHeader } from "@/components/app-header";
+import { BookingForm } from "@/components/booking-form";
+import { StatCard } from "@/components/stat-card";
+import { NTAInfoPanel } from "@/components/nta-info-panel";
 import {
   Users, Car, Calendar, CalendarCheck, TrendingUp,
   RefreshCw, ChevronDown, ChevronUp, Loader2,
@@ -10,66 +14,7 @@ interface SheetRecord {
   [key: string]: string;
 }
 
-/* ---------- inline sub-components with unique names ---------- */
-
-function RCDHeader() {
-  return (
-    <header className="border-b border-border bg-card">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
-        <div>
-          <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground">Redmond Chauffeur Drive</h1>
-          <p className="text-sm text-muted-foreground">Booking &amp; Dispatch System</p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-600">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
-          System Online
-        </span>
-      </div>
-    </header>
-  );
-}
-
-function RCDStat({ label, value, icon: Icon, variant }: { label: string; value: string; icon: React.ElementType; variant?: string }) {
-  const isAccent = variant === "accent";
-  return (
-    <div className={`rounded-xl border p-4 ${isAccent ? "border-accent/30 bg-accent/5" : "border-border bg-card"}`}>
-      <div className="flex items-center gap-3">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${isAccent ? "bg-accent/20" : "bg-accent/10"}`}>
-          <Icon className={`h-5 w-5 ${isAccent ? "text-accent" : "text-accent"}`} />
-        </div>
-        <div>
-          <p className={`text-2xl font-bold ${isAccent ? "text-accent" : "text-foreground"}`}>{value}</p>
-          <p className="text-xs text-muted-foreground">{label}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RCDBookingPlaceholder() {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <h2 className="mb-4 font-serif text-xl font-semibold text-foreground">New Booking</h2>
-      <p className="text-sm text-muted-foreground">Booking form with Eircode inputs, Google Maps distance calculation, and NTA fare pricing coming next.</p>
-    </div>
-  );
-}
-
-function RCDNtaPanel() {
-  return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <h3 className="mb-3 text-sm font-semibold text-foreground">NTA 2026 Fare Reference</h3>
-      <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-muted-foreground">
-        <span>Initial charge (500m):</span><span className="font-medium text-foreground">EUR 4.20</span>
-        <span>Pre-booking fee:</span><span className="font-medium text-foreground">EUR 2.00</span>
-        <span>{"Tariff A (up to 15km):"}</span><span className="font-medium text-foreground">EUR 1.18/km</span>
-        <span>{"Tariff B (over 15km):"}</span><span className="font-medium text-foreground">EUR 1.54/km</span>
-      </div>
-    </div>
-  );
-}
-
-function RCDDriversPanel({ drivers, loading, error, onRefresh }: {
+function DriversPanel({ drivers, loading, error, onRefresh }: {
   drivers: SheetRecord[];
   loading: boolean;
   error: string | null;
@@ -139,13 +84,12 @@ function RCDDriversPanel({ drivers, loading, error, onRefresh }: {
             const profilePhoto = driver["Profile Photo"] || "";
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status.toLowerCase() === "on duty" || status === "";
             const allKeys = Object.keys(driver);
-
             return (
               <div key={idx} className="rounded-lg border border-border bg-secondary/30 hover:bg-secondary/60">
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {profilePhoto ? (
-                      <img src={profilePhoto || "/placeholder.svg"} alt={name} className="h-8 w-8 rounded-full object-cover" crossOrigin="anonymous" />
+                      <img src={profilePhoto || "/placeholder.svg"} alt={name} className="h-8 w-8 rounded-full object-cover" />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                         {name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
@@ -176,7 +120,7 @@ function RCDDriversPanel({ drivers, loading, error, onRefresh }: {
                           return (
                             <div key={key} className="flex items-start gap-2 text-xs">
                               <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
-                              <img src={val || "/placeholder.svg"} alt="Profile" className="h-16 w-16 rounded-lg object-cover" crossOrigin="anonymous" />
+                              <img src={val || "/placeholder.svg"} alt="Profile" className="h-16 w-16 rounded-lg object-cover" />
                             </div>
                           );
                         }
@@ -206,7 +150,7 @@ function RCDDriversPanel({ drivers, loading, error, onRefresh }: {
   );
 }
 
-function RCDVehiclesPanel({ vehicles, loading, error, onRefresh }: {
+function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
   vehicles: SheetRecord[];
   loading: boolean;
   error: string | null;
@@ -270,11 +214,10 @@ function RCDVehiclesPanel({ vehicles, loading, error, onRefresh }: {
             const isExpanded = expandedVehicle === idx;
             const name = vehicle["Vehicle Name"] || vehicle["Name"] || vehicle["Make"] || vehicle["Registration"] || Object.values(vehicle)[0] || "Unknown";
             const reg = vehicle["Registration"] || vehicle["Reg"] || "";
-            const vType = vehicle["Type"] || vehicle["Vehicle Type"] || vehicle["Category"] || "";
+            const vType = vehicle["Type"] || vehicle["Vehicle Type"] || "";
             const status = vehicle["Status"] || vehicle["Current Status"] || "";
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status === "";
             const allKeys = Object.keys(vehicle);
-
             return (
               <div key={idx} className="rounded-lg border border-border bg-secondary/30 hover:bg-secondary/60">
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
@@ -287,12 +230,6 @@ function RCDVehiclesPanel({ vehicles, loading, error, onRefresh }: {
                       <div className="flex items-center gap-2">
                         {reg && <span className="font-mono text-xs text-muted-foreground">{reg}</span>}
                         {vType && <span className="text-xs text-muted-foreground">{vType}</span>}
-                        {status && (
-                          <span className={`inline-flex items-center gap-1 text-xs ${isActive ? "text-green-600" : "text-muted-foreground"}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-500" : "bg-muted-foreground/50"}`} />
-                            {status}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -323,8 +260,6 @@ function RCDVehiclesPanel({ vehicles, loading, error, onRefresh }: {
   );
 }
 
-/* ---------- main page ---------- */
-
 export default function Home() {
   const [drivers, setDrivers] = useState<SheetRecord[]>([]);
   const [driversLoading, setDriversLoading] = useState(true);
@@ -337,14 +272,11 @@ export default function Home() {
     setDriversLoading(true);
     setDriversError(null);
     try {
-      console.log("[v0] Fetching drivers...");
       const res = await fetch("/api/drivers");
       const data = await res.json();
-      console.log("[v0] Drivers response:", res.status, JSON.stringify(data).slice(0, 300));
       if (!res.ok) throw new Error(data.error || "Failed to fetch drivers");
       setDrivers(data.drivers);
     } catch (err) {
-      console.log("[v0] Drivers error:", err);
       setDriversError(err instanceof Error ? err.message : "Failed to load drivers");
     } finally {
       setDriversLoading(false);
@@ -355,14 +287,11 @@ export default function Home() {
     setVehiclesLoading(true);
     setVehiclesError(null);
     try {
-      console.log("[v0] Fetching vehicles...");
       const res = await fetch("/api/vehicles");
       const data = await res.json();
-      console.log("[v0] Vehicles response:", res.status, JSON.stringify(data).slice(0, 300));
       if (!res.ok) throw new Error(data.error || "Failed to fetch vehicles");
       setVehicles(data.vehicles);
     } catch (err) {
-      console.log("[v0] Vehicles error:", err);
       setVehiclesError(err instanceof Error ? err.message : "Failed to load vehicles");
     } finally {
       setVehiclesLoading(false);
@@ -376,7 +305,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <RCDHeader />
+      <AppHeader />
       <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">Booking Dashboard</h1>
@@ -384,20 +313,20 @@ export default function Home() {
         </div>
 
         <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <RCDStat label="Today's Bookings" value="--" icon={CalendarCheck} />
-          <RCDStat label="Active Drivers" value={driversLoading ? "..." : String(drivers.length)} icon={Users} />
-          <RCDStat label="Fleet Vehicles" value={vehiclesLoading ? "..." : String(vehicles.length)} icon={Car} />
-          <RCDStat label="Avg Fare (NTA 2026)" value="--" icon={TrendingUp} variant="accent" />
+          <StatCard label="Today's Bookings" value="--" icon={CalendarCheck} />
+          <StatCard label="Active Drivers" value={driversLoading ? "..." : String(drivers.length)} icon={Users} />
+          <StatCard label="Fleet Vehicles" value={vehiclesLoading ? "..." : String(vehicles.length)} icon={Car} />
+          <StatCard label="Avg Fare (NTA 2026)" value="--" icon={TrendingUp} variant="accent" />
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <RCDBookingPlaceholder />
+            <BookingForm />
           </div>
           <div className="space-y-6">
-            <RCDDriversPanel drivers={drivers} loading={driversLoading} error={driversError} onRefresh={fetchDrivers} />
-            <RCDVehiclesPanel vehicles={vehicles} loading={vehiclesLoading} error={vehiclesError} onRefresh={fetchVehicles} />
-            <RCDNtaPanel />
+            <DriversPanel drivers={drivers} loading={driversLoading} error={driversError} onRefresh={fetchDrivers} />
+            <VehiclesPanel vehicles={vehicles} loading={vehiclesLoading} error={vehiclesError} onRefresh={fetchVehicles} />
+            <NTAInfoPanel />
           </div>
         </div>
       </main>
@@ -405,7 +334,7 @@ export default function Home() {
       <footer className="border-t border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 py-4 lg:px-8">
           <p className="text-center text-xs text-muted-foreground">
-            Redmond Chauffeur Drive - Booking &amp; Dispatch System v1.0
+            {"Redmond Chauffeur Drive - Booking & Dispatch System v1.0"}
           </p>
         </div>
       </footer>
