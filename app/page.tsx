@@ -14,23 +14,32 @@ interface SheetRecord {
   [key: string]: string;
 }
 
+// Extract Google Drive file ID from various URL formats
+function extractDriveFileId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+    /drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
 // Convert Google Drive sharing URLs to direct image URLs
-function toDirectImageUrl(url: string): string {
+function toDirectImageUrl(url: string, size?: number): string {
   if (!url) return "";
-  // Google Drive file link: https://drive.google.com/file/d/FILE_ID/view...
-  const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (driveFileMatch) {
-    return `https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`;
+  const fileId = extractDriveFileId(url);
+  if (fileId) {
+    const sizeParam = size ? `=s${size}-c` : "";
+    return `https://lh3.googleusercontent.com/d/${fileId}${sizeParam}`;
   }
-  // Google Drive open link: https://drive.google.com/open?id=FILE_ID
-  const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-  if (driveOpenMatch) {
-    return `https://lh3.googleusercontent.com/d/${driveOpenMatch[1]}`;
-  }
-  // Google Drive uc link: https://drive.google.com/uc?id=FILE_ID
-  const driveUcMatch = url.match(/drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/);
-  if (driveUcMatch) {
-    return `https://lh3.googleusercontent.com/d/${driveUcMatch[1]}`;
+  // Already a googleusercontent URL - append size if needed
+  if (url.includes("lh3.googleusercontent.com") && size) {
+    return url.replace(/=s\d+.*$/, "") + `=s${size}-c`;
   }
   return url;
 }
@@ -46,16 +55,16 @@ function isImageColumn(key: string, val: string): boolean {
 }
 
 // Find the first photo URL from any column in a record
-function findPhotoUrl(record: SheetRecord): string {
+function findPhotoUrl(record: SheetRecord, size?: number): string {
   // First check common column names
   const photoKeys = ["Profile Photo", "Photo", "Image", "Picture", "Photo URL", "Vehicle Photo", "profile photo", "Pic", "Avatar"];
   for (const key of photoKeys) {
-    if (record[key]) return toDirectImageUrl(record[key]);
+    if (record[key]) return toDirectImageUrl(record[key], size);
   }
   // Then scan all columns for any value that looks like an image URL
   for (const [key, val] of Object.entries(record)) {
     if (val && (val.startsWith("http://") || val.startsWith("https://")) && isImageColumn(key, val)) {
-      return toDirectImageUrl(val);
+      return toDirectImageUrl(val, size);
     }
   }
   return "";
@@ -128,7 +137,7 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
             const status = driver["Current Status"] || "";
             const ntaId = driver["NTA Driver ID"] || "";
             const availableFrom = driver["Available From"] || "";
-            const profilePhoto = findPhotoUrl(driver);
+            const profilePhoto = findPhotoUrl(driver, 80);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status.toLowerCase() === "on duty" || status === "";
             const allKeys = Object.keys(driver);
             return (
@@ -168,11 +177,11 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                         const isUrl = val.startsWith("http://") || val.startsWith("https://");
                         const isImg = isUrl && isImageColumn(key, val);
                         if (isImg) {
-                          const directUrl = toDirectImageUrl(val);
+                          const directUrl = toDirectImageUrl(val, 400);
                           return (
                             <div key={key} className="text-xs">
                               <span className="font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-contain border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
@@ -272,7 +281,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
             const reg = vehicle["Registration"] || vehicle["Reg"] || "";
             const vType = vehicle["Type"] || vehicle["Vehicle Type"] || "";
             const status = vehicle["Status"] || vehicle["Current Status"] || "";
-            const vehiclePhoto = findPhotoUrl(vehicle);
+            const vehiclePhoto = findPhotoUrl(vehicle, 80);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status === "";
             const allKeys = Object.keys(vehicle);
             return (
@@ -307,11 +316,11 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                         const isUrl = val.startsWith("http://") || val.startsWith("https://");
                         const isImg = isUrl && isImageColumn(key, val);
                         if (isImg) {
-                          const directUrl = toDirectImageUrl(val);
+                          const directUrl = toDirectImageUrl(val, 400);
                           return (
                             <div key={key} className="text-xs">
                               <span className="font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-contain border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
