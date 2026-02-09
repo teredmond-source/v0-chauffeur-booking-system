@@ -57,6 +57,33 @@ export async function updateSheetRow(range: string, values: string[][]) {
   return response.data;
 }
 
+export async function getBookings() {
+  const data = await getSheetData("Bookings!A1:Z");
+  if (data.length < 2) return [];
+  const headers = data[0];
+  return data.slice(1).map((row: string[], rowIndex: number) => {
+    const obj: Record<string, string> = {};
+    headers.forEach((h: string, i: number) => {
+      obj[h] = row[i] || "";
+    });
+    obj["_rowIndex"] = String(rowIndex + 2); // 1-indexed, +1 for header
+    return obj;
+  });
+}
+
+export async function updateSheetCell(range: string, value: string) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: getSheetId(),
+    range,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[value]],
+    },
+  });
+}
+
 export async function getDrivers() {
   const data = await getSheetData("Drivers!A1:Z");
   if (data.length < 2) return [];

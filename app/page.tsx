@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/app-header";
 import { BookingForm } from "@/components/booking-form";
 import { StatCard } from "@/components/stat-card";
 import { NTAInfoPanel } from "@/components/nta-info-panel";
+import { OwnerReviewPanel } from "@/components/owner-review-panel";
 import {
   Users, Car, Calendar, CalendarCheck, TrendingUp,
   RefreshCw, ChevronDown, ChevronUp, Loader2,
@@ -403,8 +404,12 @@ export default function Home() {
           <NTAInfoPanel />
         </div>
 
-        <div>
+        <div className="mb-8">
           <BookingForm />
+        </div>
+
+        <div>
+          <OwnerReviewPanel />
         </div>
       </main>
 
