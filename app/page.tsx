@@ -346,11 +346,12 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
         <div className="space-y-2">
           {drivers.map((driver, idx) => {
             const isExpanded = expandedDriver === idx;
-            const name = driver["Name"] || driver["Driver Name"] || driver["Full Name"] || Object.values(driver)[0] || "Unknown";
-            const status = driver["Status"] || driver["Availability"] || "";
-            const phone = driver["Phone"] || driver["Mobile"] || driver["Contact"] || "";
-            const license = driver["License"] || driver["Licence"] || driver["SPSV"] || driver["SPSV License"] || "";
-            const vehicle = driver["Vehicle"] || driver["Assigned Vehicle"] || driver["Car"] || "";
+            const firstName = driver["First Name"] || "";
+            const name = driver["Name"] || firstName || Object.values(driver)[0] || "Unknown";
+            const status = driver["Current Status"] || "";
+            const ntaId = driver["NTA Driver ID"] || "";
+            const availableFrom = driver["Available From"] || "";
+            const profilePhoto = driver["Profile Photo"] || "";
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status.toLowerCase() === "on duty" || status === "";
 
             const allKeys = Object.keys(driver);
@@ -362,10 +363,14 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                   className="flex w-full items-center justify-between px-3 py-3 text-left"
                   onClick={() => setExpandedDriver(isExpanded ? null : idx)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                      {name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-                    </div>
+                    <div className="flex items-center gap-3">
+                    {profilePhoto ? (
+                      <img src={profilePhoto} alt={name} className="h-8 w-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm font-medium text-foreground">{name}</p>
                       <div className="flex items-center gap-2">
@@ -375,7 +380,7 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                             {status}
                           </span>
                         )}
-                        {vehicle && <span className="text-xs text-muted-foreground">{vehicle}</span>}
+                        {ntaId && <span className="text-xs text-muted-foreground">NTA: {ntaId}</span>}
                       </div>
                     </div>
                   </div>
@@ -388,19 +393,28 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                       {allKeys.map((key) => {
                         const val = driver[key];
                         if (!val) return null;
+                        if (key === "Profile Photo") {
+                          return (
+                            <div key={key} className="flex items-start gap-2 text-xs">
+                              <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
+                              <img src={val} alt="Profile" className="h-16 w-16 rounded-lg object-cover" />
+                            </div>
+                          );
+                        }
                         return (
                           <div key={key} className="flex items-start gap-2 text-xs">
-                            <span className="min-w-[100px] shrink-0 font-medium text-muted-foreground">{key}:</span>
+                            <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
                             <span className="text-foreground">{val}</span>
                           </div>
                         );
                       })}
                     </div>
-                    {phone && (
-                      <a href={`tel:${phone}`} className="mt-2 flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
-                        <Phone className="h-3 w-3" />
-                        Call {phone}
-                      </a>
+                    {availableFrom && (
+                      <div className="mt-2 flex items-center gap-1.5 rounded-md bg-accent/10 px-2 py-1 text-xs">
+                        <Calendar className="h-3 w-3 text-accent" />
+                        <span className="text-muted-foreground">Available from:</span>
+                        <span className="font-medium text-foreground">{availableFrom}</span>
+                      </div>
                     )}
                   </div>
                 )}
