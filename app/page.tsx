@@ -269,6 +269,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
           {vehicles.map((vehicle, idx) => {
             const isExpanded = expandedVehicle === idx;
             const name = vehicle["Vehicle Name"] || vehicle["Name"] || vehicle["Make"] || vehicle["Registration"] || Object.values(vehicle)[0] || "Unknown";
+            const colour = vehicle["Colour"] || vehicle["Color"] || vehicle["colour"] || "";
             const reg = vehicle["Registration"] || vehicle["Reg"] || "";
             const vType = vehicle["Type"] || vehicle["Vehicle Type"] || "";
             const status = vehicle["Status"] || vehicle["Current Status"] || "";
@@ -288,6 +289,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                     )}
                     <div>
                       <p className="text-sm font-medium text-foreground">{name}</p>
+                      {colour && <p className="text-xs text-muted-foreground">Colour: {colour}</p>}
                       <div className="flex items-center gap-2">
                         {reg && <span className="font-mono text-xs text-muted-foreground">{reg}</span>}
                         {vType && <span className="text-xs text-muted-foreground">{vType}</span>}
