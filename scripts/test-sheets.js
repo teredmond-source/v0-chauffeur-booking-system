@@ -1,0 +1,71 @@
+import { google } from "googleapis";
+
+const SERVICE_ACCOUNT = {
+  client_email: "v0-69-270@taxi-app-486813.iam.gserviceaccount.com",
+  private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCsOw1UR7wyfTrH\ndR/88qt8s8+CQRyLlfgPnelpXe9f8NyNyO0qpHW/0W0kIJkDd2LYsXk+9buDPGJZ\na7x9PV2Vsq9uBALIindh/GyyjS2JQL8kKxh6T9vhU8IYefgdqZxulNGdXgnDycaM\nFF7uXyGWv7t4GmbUiweEo409ANIWm2GrHOJrUB2vv3uDYopGb5OP4lEr84dKeL/2\nZksoZQ9Tp3j/tSXB8NXKvtKjHUCIJZR/yHSllSjNZeBKngPobbSzbt4nChc7gt6Q\nebGzV0mLPmaPHS53hz42xv+ke7/Q0lq2UnVcxGw8CcDUYGYq1iq9QV2j9DzBI3X1\nwg+9uMfhAgMBAAECggEABiX93JL1WLm9lLEYISlPmRN5Nl2ZMDF8dMrux3cV7Hn2\nga2ZK93Jof1PCmG13K4RI7UNjpi//C12bFn11WRmAsn+zGxiZg2CuVyFITL8MRYU\nN21owbW39C66MzH9ex+a3ka78e8muuwpL/HVOWjA0/cdxpSYtFXkljtZd4Kf6AnO\ne7RGYsvDvrwpeBd4iNnBJlCCh+WWrlYVxLCq5UCu174okH9C1dzkMPVt37GtvLYO\nawuEPFbW+zF4rhypzDgGfaOjQP9kzIWKt4cDkmiSmNttjhi3tqLmXvUQHhdXLVFT\njO/fO3U0GyhEowyx+z+U+cQghBMdM7dMqdsQ0YRtzQKBgQDcZ7/Dl0GBBfLLdECR\nsJaObs9Iy3ZNxb++m/bpRKVRWFgDUeU3xo3n7zg/9PlB7fEJ/Ia7K0OMHuS+ELFq\njycSiQGuQevIEHSDBHsbnU174eMVAsCA9qrAaeG/XpK3bYarJN0Cy7ScKzUmp/sT\nGkOjKi2uGkrH4AIwETn9sTdUrQKBgQDIC5zd3GJL5Gn1Vy8bIuor+ayj+ZVs9GKf\nwYRRa96WpM2+Y/srWDbx7CmqVD7PbTEgMJierSCoFc/1SmZuYJlg58QNRpZgLJim\nJXNfl/zMxDnauSricVakIbREjQ6P7y5gFylmRn+NWi8NYJ4AUjWD6ppFL4VokeQA\nT6qQkTAyhQKBgQCUv5hWIpDcyOzxjoW9TZZuji5rDJXNKzabJ5teFywTWDIeG3k9\nSU2gSHyH/YbzjehtOvaa/znZKUhrVczHA9H02m498tNz9FcNzUpgeqs+flbJaVAO\nOWtH7K2kf+k4zjxi6MAYEO7VrvtyGVCDtegMCH1H0QrDFlWjpxyiMKYNCQKBgQCh\nv/oLzknQsZUXYnJdT8Lm4c+9Gm6/FW+1WyThLQZi6kjN3EvXxVFQFbOu3MWYtOKW\n85REIRqZrmFjJdBjCUqbd2snjN7ETury1K9QKTWoYDWjbDuHszrqJbJ8B04yBaSK\n38+CuhgitDv9ZhT7j31j98rbjEwjvGsN8Vyp3iuJfQKBgEmA4SsBpFC79ngXseiU\nyWxVeartytzSNCzpqjtLEaOsSRmXL9zhteftqDP7f7OFj1ZTyFx2kjnXoOg7MxRw\n5YLYx8AOYpf12aLuQbyasSNTbzPz4FMrg/T1NQekVhPm6sorAoRQe9yGJMrtOmPO\nacgcc0UoXk0AF8rk0XqWXm8y\n-----END PRIVATE KEY-----\n",
+};
+
+const SHEET_ID = "1Mm2OGOpz32gKIdyT0ZY5KbmmgqjVMaKLprHDoFwKFFM";
+
+async function test() {
+  console.log("Testing Google Sheets connection...");
+  console.log("Sheet ID:", SHEET_ID);
+  console.log("Service account:", SERVICE_ACCOUNT.client_email);
+  
+  try {
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: SERVICE_ACCOUNT.client_email,
+        private_key: SERVICE_ACCOUNT.private_key,
+      },
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
+    const sheets = google.sheets({ version: "v4", auth });
+    
+    // First try to get spreadsheet metadata
+    console.log("Fetching spreadsheet metadata...");
+    const meta = await sheets.spreadsheets.get({
+      spreadsheetId: SHEET_ID,
+    });
+    console.log("Spreadsheet title:", meta.data.properties?.title);
+    console.log("Sheet tabs:", meta.data.sheets?.map(s => s.properties?.title).join(", "));
+
+    // Now try drivers
+    console.log("\nFetching Drivers tab...");
+    const driversRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "Drivers!A1:Z",
+    });
+    const driverRows = driversRes.data.values || [];
+    console.log("Driver rows:", driverRows.length);
+    if (driverRows.length > 0) {
+      console.log("Headers:", driverRows[0].join(", "));
+    }
+    if (driverRows.length > 1) {
+      console.log("First driver:", driverRows[1].join(", "));
+    }
+
+    // Now try vehicles
+    console.log("\nFetching Vehicles tab...");
+    const vehiclesRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "Vehicles!A1:Z",
+    });
+    const vehicleRows = vehiclesRes.data.values || [];
+    console.log("Vehicle rows:", vehicleRows.length);
+    if (vehicleRows.length > 0) {
+      console.log("Headers:", vehicleRows[0].join(", "));
+    }
+
+    console.log("\nSUCCESS - Google Sheets connection works!");
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    if (err.response) {
+      console.error("Status:", err.response.status);
+      console.error("Data:", JSON.stringify(err.response.data));
+    }
+  }
+}
+
+test();
