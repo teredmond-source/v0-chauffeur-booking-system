@@ -16,7 +16,7 @@ function getAuth() {
 }
 
 function getSheetId() {
-  return process.env.GOOGLE_SHEET_ID || "1Mm2OGOpz32gKIdyT0ZY5KbmmgqjVMaKLprHDoFwKFFM";
+  return "1Mm2OGOpz32gKIdyT0ZY5KbmmgqjVMaKLprHDoFwKFFM";
 }
 
 export async function getSheetData(range: string) {
