@@ -1,29 +1,40 @@
 import { google } from "googleapis";
 
 function getAuth() {
+  // Option 1: Full JSON service account pasted as one env var
+  const jsonRaw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (jsonRaw) {
+    try {
+      const parsed = JSON.parse(jsonRaw);
+      return new google.auth.GoogleAuth({
+        credentials: {
+          client_email: parsed.client_email,
+          private_key: parsed.private_key,
+        },
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+      });
+    } catch {
+      throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON. Paste the entire contents of your service account .json file.");
+    }
+  }
+
+  // Option 2: Separate env vars
   let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY || "";
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
 
   if (!privateKey || !clientEmail) {
     throw new Error(
-      "Missing GOOGLE_SHEETS_PRIVATE_KEY or GOOGLE_SHEETS_CLIENT_EMAIL"
+      "Missing credentials. Set either GOOGLE_SERVICE_ACCOUNT_JSON (easiest) or both GOOGLE_SHEETS_PRIVATE_KEY and GOOGLE_SHEETS_CLIENT_EMAIL."
     );
   }
 
-  // Handle different formats of the private key
-  // Remove surrounding quotes if present
-  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+  // Strip surrounding quotes
+  if ((privateKey.startsWith('"') && privateKey.endsWith('"')) ||
+      (privateKey.startsWith("'") && privateKey.endsWith("'"))) {
     privateKey = privateKey.slice(1, -1);
   }
-  if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
-    privateKey = privateKey.slice(1, -1);
-  }
-  // Replace literal \n with actual newlines
+  // Replace literal \n with real newlines
   privateKey = privateKey.replace(/\\n/g, "\n");
-
-  console.log("[v0] Private key starts with:", privateKey.substring(0, 30));
-  console.log("[v0] Private key ends with:", privateKey.substring(privateKey.length - 30));
-  console.log("[v0] Client email:", clientEmail);
 
   return new google.auth.GoogleAuth({
     credentials: {
