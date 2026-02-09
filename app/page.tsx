@@ -145,8 +145,8 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {profilePhoto ? (
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md">
-                        <img src={profilePhoto} alt={name} className="h-full w-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                        <img src={profilePhoto} alt={name} width={40} height={40} style={{ width: 40, height: 40, objectFit: "cover", display: "block" }} referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
                       </div>
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
@@ -289,8 +289,8 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {vehiclePhoto ? (
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md">
-                        <img src={vehiclePhoto} alt={name} className="h-full w-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                        <img src={vehiclePhoto} alt={name} width={40} height={40} style={{ width: 40, height: 40, objectFit: "cover", display: "block" }} referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
                       </div>
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
