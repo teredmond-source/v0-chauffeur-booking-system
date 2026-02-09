@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { calculateDistance } from "@/lib/google-maps";
-import { calculateNTAFare } from "@/lib/pricing";
+import { calculateDistance } from "../../../lib/google-maps";
+import { calculateNTAFare } from "../../../lib/pricing";
 
 export async function POST(request: Request) {
   try {

@@ -1,7 +1,7 @@
-import { AppHeader } from "@/components/app-header";
-import { BookingForm } from "@/components/booking-form";
-import { StatCard } from "@/components/stat-card";
-import { NTAInfoPanel } from "@/components/nta-info-panel";
+import { AppHeader } from "../components/app-header";
+import { BookingForm } from "../components/booking-form";
+import { StatCard } from "../components/stat-card";
+import { NTAInfoPanel } from "../components/nta-info-panel";
 import {
   CalendarCheck,
   Car,

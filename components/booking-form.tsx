@@ -18,7 +18,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { FareBreakdownDisplay } from "./fare-breakdown";
-import type { FareBreakdown } from "@/lib/pricing";
+import type { FareBreakdown } from "../lib/pricing";
 
 interface QuoteResult {
   distance: {

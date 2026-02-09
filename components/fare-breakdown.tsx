@@ -1,4 +1,4 @@
-import type { FareBreakdown } from "@/lib/pricing";
+import type { FareBreakdown } from "../lib/pricing";
 import { MapPin, Clock, Route } from "lucide-react";
 
 interface FareBreakdownDisplayProps {

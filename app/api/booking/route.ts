@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { calculateDistance } from "@/lib/google-maps";
-import { calculateNTAFare } from "@/lib/pricing";
-import { appendSheetRow } from "@/lib/google-sheets";
+import { calculateDistance } from "../../../lib/google-maps";
+import { calculateNTAFare } from "../../../lib/pricing";
+import { appendSheetRow } from "../../../lib/google-sheets";
 
 export async function POST(request: Request) {
   try {
