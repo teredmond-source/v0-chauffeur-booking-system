@@ -136,7 +136,9 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {profilePhoto ? (
-                      <img src={profilePhoto} alt={name} className="h-10 w-10 shrink-0 rounded-md object-cover aspect-square" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md">
+                        <img src={profilePhoto} alt={name} className="h-full w-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
+                      </div>
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
                         {name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
@@ -278,7 +280,9 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {vehiclePhoto ? (
-                      <img src={vehiclePhoto} alt={name} className="h-10 w-10 shrink-0 rounded-md object-cover aspect-square" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md">
+                        <img src={vehiclePhoto} alt={name} className="h-full w-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }} />
+                      </div>
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
                         <Car className="h-4 w-4 text-primary" />
