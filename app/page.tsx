@@ -1,5 +1,5 @@
 "use client";
-
+// v1.1 - All components inlined, no external component imports
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -779,11 +779,14 @@ export default function Home() {
     setDriversLoading(true);
     setDriversError(null);
     try {
+      console.log("[v0] Fetching drivers from /api/drivers...");
       const res = await fetch("/api/drivers");
       const data = await res.json();
+      console.log("[v0] Drivers API response:", res.status, JSON.stringify(data).slice(0, 500));
       if (!res.ok) throw new Error(data.error || "Failed to fetch drivers");
       setDrivers(data.drivers);
     } catch (err) {
+      console.log("[v0] Drivers fetch error:", err);
       setDriversError(err instanceof Error ? err.message : "Failed to load drivers");
     } finally {
       setDriversLoading(false);
