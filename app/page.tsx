@@ -289,7 +289,6 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                     )}
                     <div>
                       <p className="text-sm font-medium text-foreground">{name}</p>
-                      {colour && <p className="text-xs text-muted-foreground">Colour: {colour}</p>}
                       <div className="flex items-center gap-2">
                         {reg && <span className="font-mono text-xs text-muted-foreground">{reg}</span>}
                         {vType && <span className="text-xs text-muted-foreground">{vType}</span>}
