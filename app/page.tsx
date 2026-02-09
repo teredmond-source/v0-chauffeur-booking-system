@@ -397,15 +397,14 @@ export default function Home() {
           <StatCard label="Avg Fare (NTA 2026)" value="--" icon={TrendingUp} variant="accent" />
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <BookingForm />
-          </div>
-          <div className="space-y-6">
-            <DriversPanel drivers={drivers} loading={driversLoading} error={driversError} onRefresh={fetchDrivers} />
-            <VehiclesPanel vehicles={vehicles} loading={vehiclesLoading} error={vehiclesError} onRefresh={fetchVehicles} />
-            <NTAInfoPanel />
-          </div>
+        <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <DriversPanel drivers={drivers} loading={driversLoading} error={driversError} onRefresh={fetchDrivers} />
+          <VehiclesPanel vehicles={vehicles} loading={vehiclesLoading} error={vehiclesError} onRefresh={fetchVehicles} />
+          <NTAInfoPanel />
+        </div>
+
+        <div>
+          <BookingForm />
         </div>
       </main>
 
