@@ -16,11 +16,7 @@ function getAuth() {
 }
 
 function getSheetId() {
-  const sheetId = process.env.GOOGLE_SHEET_ID;
-  if (!sheetId) {
-    throw new Error("Missing GOOGLE_SHEET_ID");
-  }
-  return sheetId;
+  return process.env.GOOGLE_SHEET_ID || "1Mm2OGOpz32gKIdyT0ZY5KbmmgqjVMaKLprHDoFwKFFM";
 }
 
 export async function getSheetData(range: string) {
