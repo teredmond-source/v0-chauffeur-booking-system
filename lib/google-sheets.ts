@@ -1,10 +1,7 @@
 import { google } from "googleapis";
 
 function getAuth() {
-  const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(
-    /\\n/g,
-    "\n"
-  );
+  let privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY || "";
   const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
 
   if (!privateKey || !clientEmail) {
@@ -12,6 +9,21 @@ function getAuth() {
       "Missing GOOGLE_SHEETS_PRIVATE_KEY or GOOGLE_SHEETS_CLIENT_EMAIL"
     );
   }
+
+  // Handle different formats of the private key
+  // Remove surrounding quotes if present
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  // Replace literal \n with actual newlines
+  privateKey = privateKey.replace(/\\n/g, "\n");
+
+  console.log("[v0] Private key starts with:", privateKey.substring(0, 30));
+  console.log("[v0] Private key ends with:", privateKey.substring(privateKey.length - 30));
+  console.log("[v0] Client email:", clientEmail);
 
   return new google.auth.GoogleAuth({
     credentials: {

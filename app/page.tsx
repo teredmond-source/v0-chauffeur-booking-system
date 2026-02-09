@@ -5,10 +5,10 @@ import {
   Users, Car, Calendar, Clock, CalendarCheck, TrendingUp,
   RefreshCw, ChevronDown, ChevronUp, Loader2,
 } from "lucide-react";
-import { AppHeader } from "../components/app-header";
-import { BookingForm } from "../components/booking-form";
-import { StatCard } from "../components/stat-card";
-import { NTAInfoPanel } from "../components/nta-info-panel";
+import { AppHeader } from "@/components/app-header";
+import { BookingForm } from "@/components/booking-form";
+import { StatCard } from "@/components/stat-card";
+import { NTAInfoPanel } from "@/components/nta-info-panel";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
