@@ -9,6 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Force cache clear - v2
+  reactStrictMode: true,
 }
 
 export default nextConfig
