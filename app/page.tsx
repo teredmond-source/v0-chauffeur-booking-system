@@ -37,10 +37,28 @@ function toDirectImageUrl(url: string): string {
 
 function isImageColumn(key: string, val: string): boolean {
   const keyLower = key.toLowerCase();
-  return keyLower.includes("photo") || keyLower.includes("image") || keyLower.includes("picture") || keyLower.includes("avatar") ||
-    /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(val) ||
-    /drive\.google\.com\/(file\/d|open\?id|uc\?)/i.test(val) ||
-    /lh3\.googleusercontent\.com/i.test(val);
+  if (keyLower.includes("photo") || keyLower.includes("image") || keyLower.includes("picture") || keyLower.includes("avatar") || keyLower.includes("pic")) return true;
+  if (/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(val)) return true;
+  if (/drive\.google\.com\/(file\/d|open\?id|uc\?)/i.test(val)) return true;
+  if (/lh3\.googleusercontent\.com/i.test(val)) return true;
+  if (/googleusercontent\.com/i.test(val)) return true;
+  return false;
+}
+
+// Find the first photo URL from any column in a record
+function findPhotoUrl(record: SheetRecord): string {
+  // First check common column names
+  const photoKeys = ["Profile Photo", "Photo", "Image", "Picture", "Photo URL", "Vehicle Photo", "profile photo", "Pic", "Avatar"];
+  for (const key of photoKeys) {
+    if (record[key]) return toDirectImageUrl(record[key]);
+  }
+  // Then scan all columns for any value that looks like an image URL
+  for (const [key, val] of Object.entries(record)) {
+    if (val && (val.startsWith("http://") || val.startsWith("https://")) && isImageColumn(key, val)) {
+      return toDirectImageUrl(val);
+    }
+  }
+  return "";
 }
 
 function DriversPanel({ drivers, loading, error, onRefresh }: {
@@ -110,8 +128,7 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
             const status = driver["Current Status"] || "";
             const ntaId = driver["NTA Driver ID"] || "";
             const availableFrom = driver["Available From"] || "";
-            const rawPhoto = driver["Profile Photo"] || driver["Photo"] || driver["Image"] || driver["Photo URL"] || driver["profile photo"] || driver["Picture"] || "";
-            const profilePhoto = toDirectImageUrl(rawPhoto);
+            const profilePhoto = findPhotoUrl(driver);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status.toLowerCase() === "on duty" || status === "";
             const allKeys = Object.keys(driver);
             return (
@@ -151,9 +168,9 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                         if (isImg) {
                           const directUrl = toDirectImageUrl(val);
                           return (
-                            <div key={key} className="flex items-start gap-2 text-xs">
-                              <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="h-20 w-20 rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <div key={key} className="text-xs">
+                              <span className="font-medium text-muted-foreground">{key}:</span>
+                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
@@ -253,8 +270,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
             const reg = vehicle["Registration"] || vehicle["Reg"] || "";
             const vType = vehicle["Type"] || vehicle["Vehicle Type"] || "";
             const status = vehicle["Status"] || vehicle["Current Status"] || "";
-            const rawVehiclePhoto = vehicle["Photo"] || vehicle["Image"] || vehicle["Vehicle Photo"] || vehicle["Photo URL"] || vehicle["profile photo"] || vehicle["Picture"] || "";
-            const vehiclePhoto = toDirectImageUrl(rawVehiclePhoto);
+            const vehiclePhoto = findPhotoUrl(vehicle);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status === "";
             const allKeys = Object.keys(vehicle);
             return (
@@ -289,9 +305,9 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                         if (isImg) {
                           const directUrl = toDirectImageUrl(val);
                           return (
-                            <div key={key} className="flex items-start gap-2 text-xs">
-                              <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
-                              <img src={directUrl} alt={key} className="h-20 w-20 rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <div key={key} className="text-xs">
+                              <span className="font-medium text-muted-foreground">{key}:</span>
+                              <img src={directUrl} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
