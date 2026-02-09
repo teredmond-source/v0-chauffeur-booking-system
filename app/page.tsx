@@ -267,16 +267,21 @@ export default function Home() {
   const [vehicles, setVehicles] = useState<SheetRecord[]>([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [vehiclesError, setVehiclesError] = useState<string | null>(null);
+  const [diagResult, setDiagResult] = useState<string | null>(null);
+  const [diagLoading, setDiagLoading] = useState(false);
 
   const fetchDrivers = useCallback(async () => {
     setDriversLoading(true);
     setDriversError(null);
     try {
+      console.log("[v0] Fetching drivers...");
       const res = await fetch("/api/drivers");
       const data = await res.json();
+      console.log("[v0] Drivers response:", res.status, JSON.stringify(data).slice(0, 300));
       if (!res.ok) throw new Error(data.error || "Failed to fetch drivers");
       setDrivers(data.drivers);
     } catch (err) {
+      console.log("[v0] Drivers error:", err);
       setDriversError(err instanceof Error ? err.message : "Failed to load drivers");
     } finally {
       setDriversLoading(false);
@@ -295,6 +300,20 @@ export default function Home() {
       setVehiclesError(err instanceof Error ? err.message : "Failed to load vehicles");
     } finally {
       setVehiclesLoading(false);
+    }
+  }, []);
+
+  const runDiagnose = useCallback(async () => {
+    setDiagLoading(true);
+    setDiagResult(null);
+    try {
+      const res = await fetch("/api/debug-sheets");
+      const data = await res.json();
+      setDiagResult(JSON.stringify(data, null, 2));
+    } catch (err) {
+      setDiagResult("Fetch failed: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setDiagLoading(false);
     }
   }, []);
 
@@ -317,6 +336,22 @@ export default function Home() {
           <StatCard label="Active Drivers" value={driversLoading ? "..." : String(drivers.length)} icon={Users} />
           <StatCard label="Fleet Vehicles" value={vehiclesLoading ? "..." : String(vehicles.length)} icon={Car} />
           <StatCard label="Avg Fare (NTA 2026)" value="--" icon={TrendingUp} variant="accent" />
+        </div>
+
+        {/* Diagnose Connection */}
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={runDiagnose} disabled={diagLoading}
+              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50">
+              {diagLoading ? "Diagnosing..." : "Diagnose Google Sheets Connection"}
+            </button>
+            <span className="text-xs text-amber-700">Click to test the connection and see exactly what is happening</span>
+          </div>
+          {diagResult && (
+            <pre className="mt-3 max-h-64 overflow-auto rounded-lg bg-white p-3 text-xs text-gray-800 border border-amber-200">
+              {diagResult}
+            </pre>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
