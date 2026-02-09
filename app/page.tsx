@@ -136,9 +136,9 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {profilePhoto ? (
-                      <img src={profilePhoto} alt={name} className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <img src={profilePhoto} alt={name} className="h-8 w-8 rounded-md object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
                         {name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
                       </div>
                     )}
@@ -278,9 +278,9 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {vehiclePhoto ? (
-                      <img src={vehiclePhoto} alt={name} className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <img src={vehiclePhoto} alt={name} className="h-8 w-8 rounded-md object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
                         <Car className="h-4 w-4 text-primary" />
                       </div>
                     )}
