@@ -14,6 +14,35 @@ interface SheetRecord {
   [key: string]: string;
 }
 
+// Convert Google Drive sharing URLs to direct image URLs
+function toDirectImageUrl(url: string): string {
+  if (!url) return "";
+  // Google Drive file link: https://drive.google.com/file/d/FILE_ID/view...
+  const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch) {
+    return `https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`;
+  }
+  // Google Drive open link: https://drive.google.com/open?id=FILE_ID
+  const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  if (driveOpenMatch) {
+    return `https://lh3.googleusercontent.com/d/${driveOpenMatch[1]}`;
+  }
+  // Google Drive uc link: https://drive.google.com/uc?id=FILE_ID
+  const driveUcMatch = url.match(/drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/);
+  if (driveUcMatch) {
+    return `https://lh3.googleusercontent.com/d/${driveUcMatch[1]}`;
+  }
+  return url;
+}
+
+function isImageColumn(key: string, val: string): boolean {
+  const keyLower = key.toLowerCase();
+  return keyLower.includes("photo") || keyLower.includes("image") || keyLower.includes("picture") || keyLower.includes("avatar") ||
+    /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(val) ||
+    /drive\.google\.com\/(file\/d|open\?id|uc\?)/i.test(val) ||
+    /lh3\.googleusercontent\.com/i.test(val);
+}
+
 function DriversPanel({ drivers, loading, error, onRefresh }: {
   drivers: SheetRecord[];
   loading: boolean;
@@ -81,7 +110,8 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
             const status = driver["Current Status"] || "";
             const ntaId = driver["NTA Driver ID"] || "";
             const availableFrom = driver["Available From"] || "";
-            const profilePhoto = driver["Profile Photo"] || driver["Photo"] || driver["Image"] || driver["Photo URL"] || driver["profile photo"] || "";
+            const rawPhoto = driver["Profile Photo"] || driver["Photo"] || driver["Image"] || driver["Photo URL"] || driver["profile photo"] || driver["Picture"] || "";
+            const profilePhoto = toDirectImageUrl(rawPhoto);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status.toLowerCase() === "on duty" || status === "";
             const allKeys = Object.keys(driver);
             return (
@@ -89,7 +119,7 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {profilePhoto ? (
-                      <img src={profilePhoto || "/placeholder.svg"} alt={name} className="h-8 w-8 rounded-full object-cover" />
+                      <img src={profilePhoto} alt={name} className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                         {name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
@@ -116,13 +146,14 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
                       {allKeys.map((key) => {
                         const val = driver[key];
                         if (!val) return null;
-                        const isImageUrl = val.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i) || key.toLowerCase().includes("photo") || key.toLowerCase().includes("image");
                         const isUrl = val.startsWith("http://") || val.startsWith("https://");
-                        if (isImageUrl && isUrl) {
+                        const isImg = isUrl && isImageColumn(key, val);
+                        if (isImg) {
+                          const directUrl = toDirectImageUrl(val);
                           return (
                             <div key={key} className="flex items-start gap-2 text-xs">
                               <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
-                              <img src={val} alt={key} className="h-20 w-20 rounded-lg object-cover border border-border" crossOrigin="anonymous" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl} alt={key} className="h-20 w-20 rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
@@ -222,7 +253,8 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
             const reg = vehicle["Registration"] || vehicle["Reg"] || "";
             const vType = vehicle["Type"] || vehicle["Vehicle Type"] || "";
             const status = vehicle["Status"] || vehicle["Current Status"] || "";
-            const vehiclePhoto = vehicle["Photo"] || vehicle["Image"] || vehicle["Vehicle Photo"] || vehicle["Photo URL"] || vehicle["profile photo"] || "";
+            const rawVehiclePhoto = vehicle["Photo"] || vehicle["Image"] || vehicle["Vehicle Photo"] || vehicle["Photo URL"] || vehicle["profile photo"] || vehicle["Picture"] || "";
+            const vehiclePhoto = toDirectImageUrl(rawVehiclePhoto);
             const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status === "";
             const allKeys = Object.keys(vehicle);
             return (
@@ -230,7 +262,7 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                 <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
                   <div className="flex items-center gap-3">
                     {vehiclePhoto ? (
-                      <img src={vehiclePhoto} alt={name} className="h-8 w-8 rounded-full object-cover" crossOrigin="anonymous" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <img src={vehiclePhoto} alt={name} className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                         <Car className="h-4 w-4 text-primary" />
@@ -252,13 +284,14 @@ function VehiclesPanel({ vehicles, loading, error, onRefresh }: {
                       {allKeys.map((key) => {
                         const val = vehicle[key];
                         if (!val) return null;
-                        const isImageUrl = val.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)/i) || key.toLowerCase().includes("photo") || key.toLowerCase().includes("image");
                         const isUrl = val.startsWith("http://") || val.startsWith("https://");
-                        if (isImageUrl && isUrl) {
+                        const isImg = isUrl && isImageColumn(key, val);
+                        if (isImg) {
+                          const directUrl = toDirectImageUrl(val);
                           return (
                             <div key={key} className="flex items-start gap-2 text-xs">
                               <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
-                              <img src={val} alt={key} className="h-20 w-20 rounded-lg object-cover border border-border" crossOrigin="anonymous" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <img src={directUrl} alt={key} className="h-20 w-20 rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             </div>
                           );
                         }
