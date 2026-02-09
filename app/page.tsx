@@ -132,8 +132,9 @@ function DriversPanel({ drivers, loading, error, onRefresh }: {
         <div className="space-y-2">
           {drivers.map((driver, idx) => {
             const isExpanded = expandedDriver === idx;
-            const firstName = driver["First Name"] || "";
-            const name = driver["Name"] || firstName || Object.values(driver)[0] || "Unknown";
+            const firstName = driver["First Name"] || driver["first name"] || "";
+            const lastName = driver["Last Name"] || driver["Surname"] || driver["last name"] || "";
+            const name = driver["Name"] || (firstName && lastName ? `${firstName} ${lastName}` : firstName || Object.values(driver)[0]) || "Unknown";
             const status = driver["Current Status"] || "";
             const ntaId = driver["NTA Driver ID"] || "";
             const availableFrom = driver["Available From"] || "";
