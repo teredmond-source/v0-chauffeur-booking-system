@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { calculateDistance } from "../../../lib/google-maps";
 import { calculateNTAFare } from "../../../lib/pricing";
-import { appendSheetRow, ensureSheetTab, getSheetData, updateSheetRow } from "../../../lib/google-sheets";
+import { appendSheetRow, getSheetData } from "../../../lib/google-sheets";
 
-// Booking submission handler v2 - generates unique sequential Request IDs
 export async function POST(request: Request) {
-  console.log("[v0] Booking POST handler v2 called");
+  console.log("[v0] === BOOKING POST START ===");
   try {
     const body = await request.json();
-    console.log("[v0] Booking request body:", JSON.stringify({ customerName: body.customerName, vehicleType: body.vehicleType }));
+    console.log("[v0] Body received:", JSON.stringify(body).slice(0, 300));
+
     const {
       customerName,
       phone,
@@ -21,64 +21,21 @@ export async function POST(request: Request) {
       pickupDate,
       pickupTime,
       minFare,
-      adjustedFare,
       preferredReply,
     } = body;
 
-    // Validate required fields
-    if (!customerName || !pickupEircode || !destinationEircode || !vehicleType) {
+    if (!customerName || !pickupEircode || !destinationEircode) {
       return NextResponse.json(
-        { error: "Missing required fields: Name, Pickup Eircode, Destination Eircode, and Vehicle Type are required." },
+        { error: "Name, Pickup Eircode, and Destination Eircode are required." },
         { status: 400 }
       );
     }
 
-    // Step 1: Calculate distance via Google Maps
-    const distance = await calculateDistance(pickupEircode, destinationEircode);
-
-    // Step 2: Calculate NTA fare
-    const fare = calculateNTAFare(distance.distanceKm, distance.durationMinutes);
-
-    // Step 3: Apply minimum fare and round to nearest euro
-    const ntaFare = fare.totalFare;
-    const vehicleMinFare = minFare || 15;
-    const finalFare = adjustedFare || Math.round(Math.max(ntaFare, vehicleMinFare));
-
-    const timestamp = new Date().toISOString();
-
-    // Step 5: Write to Google Sheets - Bookings tab
-    // First, check if headers exist. If not, write them.
-    const headers = [
-      "Request ID", "Customer Name", "Phone", "Email", "General Query",
-      "Pickup Eircode", "Destination Eircode", "Vehicle Type", "Date", "Time",
-      "Pax", "Distance KM", "Travel Time", "NTA Max Fare", "Adjusted Fare",
-      "Status", "Timestamp", "Origin Address", "Destination Address", "Owner Fare", "Preferred Reply",
-    ];
-
-    // Ensure Bookings tab and headers exist
-    const tabExisted = await ensureSheetTab("Bookings");
-    if (!tabExisted) {
-      // Tab just created - write headers
-      await updateSheetRow("Bookings!A1:U1", [headers]);
-    } else {
-      const existing = await getSheetData("Bookings!A1:A1");
-      if (!existing || existing.length === 0 || existing[0][0] !== "Request ID") {
-        // No headers - insert them
-        const allData = await getSheetData("Bookings!A1:U");
-        if (!allData || allData.length === 0) {
-          await updateSheetRow("Bookings!A1:U1", [headers]);
-        } else {
-          const newData = [headers, ...allData];
-          await updateSheetRow(`Bookings!A1:U${newData.length}`, newData);
-        }
-      }
-    }
-
-    // Generate unique Request ID by reading existing IDs from the now-guaranteed sheet
-    let maxNum = 1000;
+    // Generate unique Request ID from existing data
+    let requestId = `RD-${Date.now().toString().slice(-6)}`;
     try {
       const idData = await getSheetData("Bookings!A:A");
-      console.log("[v0] All IDs in column A:", JSON.stringify(idData.map((r: string[]) => r[0])));
+      let maxNum = 1000;
       for (const row of idData) {
         const val = row[0];
         if (val && val.startsWith("RD-")) {
@@ -86,53 +43,83 @@ export async function POST(request: Request) {
           if (!isNaN(num) && num > maxNum) maxNum = num;
         }
       }
-    } catch (e) {
-      console.log("[v0] Failed to read IDs, using timestamp fallback:", e);
+      requestId = `RD-${maxNum + 1}`;
+      console.log("[v0] Generated ID from sheet:", requestId);
+    } catch (idErr) {
+      console.log("[v0] ID generation fallback used:", requestId, idErr);
     }
-    const requestId = `RD-${maxNum + 1}`;
-    console.log("[v0] Generated new Request ID:", requestId);
+
+    // Calculate distance
+    let distanceKm = 0;
+    let durationMinutes = 0;
+    let originAddress = pickupEircode;
+    let destinationAddress = destinationEircode;
+    try {
+      const distance = await calculateDistance(pickupEircode, destinationEircode);
+      distanceKm = distance.distanceKm;
+      durationMinutes = distance.durationMinutes;
+      originAddress = distance.originAddress || pickupEircode;
+      destinationAddress = distance.destinationAddress || destinationEircode;
+      console.log("[v0] Distance calculated:", distanceKm, "km,", durationMinutes, "min");
+    } catch (distErr) {
+      console.log("[v0] Distance calc failed, continuing without:", distErr);
+    }
+
+    // Calculate fare
+    let ntaFare = 0;
+    try {
+      const fare = calculateNTAFare(distanceKm, durationMinutes);
+      ntaFare = fare.totalFare;
+    } catch (fareErr) {
+      console.log("[v0] Fare calc failed:", fareErr);
+    }
+    const vehicleMinFare = minFare || 15;
+    const finalFare = Math.round(Math.max(ntaFare, vehicleMinFare));
+
+    const timestamp = new Date().toISOString();
 
     const rowData = [
       requestId,
-      customerName,
+      customerName || "",
       phone || "",
       email || "",
       generalQuery || "",
-      pickupEircode,
-      destinationEircode,
-      vehicleType,
+      pickupEircode || "",
+      destinationEircode || "",
+      vehicleType || "",
       pickupDate || "",
       pickupTime || "",
       passengers?.toString() || "1",
-      distance.distanceKm.toString(),
-      distance.durationMinutes.toString(),
+      distanceKm.toString(),
+      durationMinutes.toString(),
       ntaFare.toFixed(2),
       finalFare.toString(),
       "Requested",
       timestamp,
-      distance.originAddress,
-      distance.destinationAddress,
-      "", // Owner Fare - blank until owner sets it
+      originAddress,
+      destinationAddress,
+      "",
       preferredReply || "whatsapp",
     ];
 
+    console.log("[v0] Writing row:", JSON.stringify(rowData).slice(0, 300));
     await appendSheetRow("Bookings!A:U", [rowData]);
+    console.log("[v0] Row written successfully");
 
     return NextResponse.json({
       success: true,
       bookingId: requestId,
       distance: {
-        km: distance.distanceKm,
-        minutes: distance.durationMinutes,
-        originAddress: distance.originAddress,
-        destinationAddress: distance.destinationAddress,
+        km: distanceKm,
+        minutes: durationMinutes,
+        originAddress,
+        destinationAddress,
       },
-      fare: { ...fare, totalFare: finalFare },
+      fare: { totalFare: finalFare },
     });
   } catch (error) {
-    console.error("Booking API error:", error);
-    const message =
-      error instanceof Error ? error.message : "An unexpected error occurred";
+    console.error("[v0] BOOKING ERROR:", error);
+    const message = error instanceof Error ? error.message : "An unexpected error occurred";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
