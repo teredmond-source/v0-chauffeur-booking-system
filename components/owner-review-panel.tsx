@@ -140,14 +140,14 @@ export function OwnerReviewPanel() {
     const requestId = booking["Request ID"];
     const fare = fareOverrides[requestId] || booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"];
     const vehicle = booking["Vehicle Type"] || "";
-    const driver = booking["Assigned Driver"] || "your assigned driver";
     const from = booking["Origin Address"] || booking["Pickup Eircode"] || "";
     const to = booking["Destination Address"] || booking["Destination Eircode"] || "";
     const date = booking["Date"] || "";
     const time = booking["Time"] || "";
-    const dateStr = date ? ` on ${date}${time ? ` at ${time}` : ""}` : "";
+    const dateStr = date ? `\nRequested Date: ${date}${time ? ` at ${time}` : ""}` : "";
+    const confirmedAt = new Date().toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" });
 
-    const message = `Hi ${name},\n\nYour booking is confirmed!\n\nBooking: ${requestId}\nVehicle: ${vehicle}\nFrom: ${from}\nTo: ${to}${dateStr}\nFare: \u20AC${fare}\nDriver: ${driver}\n\nYour driver will contact you before pickup. Thank you for choosing Redmond Chauffeur Drive.`;
+    const message = `Hi ${name},\n\nYour booking is confirmed!\n\nBooking Ref: ${requestId}\nVehicle: ${vehicle}\nFrom: ${from}\nTo: ${to}${dateStr}\nFare: \u20AC${fare}\nConfirmed At: ${confirmedAt}\n\nYour driver will contact you before pickup. Thank you for choosing Redmond Chauffeur Drive.`;
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   };
 
@@ -330,15 +330,7 @@ export function OwnerReviewPanel() {
                             />
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSaveFare(requestId, uniqueKey)}
-                          disabled={savingFare === requestId || !fareOverrides[requestId]}
-                          className="flex items-center gap-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
-                        >
-                          {savingFare === requestId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                          Save
-                        </button>
+
                       </div>
                     </div>
 

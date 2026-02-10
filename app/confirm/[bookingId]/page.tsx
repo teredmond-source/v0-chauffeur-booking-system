@@ -115,6 +115,9 @@ export default function ConfirmBookingPage() {
   }
 
   const displayFare = booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"] || "0";
+  const preferredReply = booking["Preferred Reply"] || "whatsapp";
+  const replyMethod = preferredReply === "email" ? "email" : "WhatsApp";
+  const confirmationTime = new Date().toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" });
 
   // Already confirmed or cancelled
   if (actionDone) {
@@ -147,11 +150,21 @@ export default function ConfirmBookingPage() {
                     </div>
                   </div>
                   {booking["Date"] && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-accent" />
-                      <span className="text-foreground">{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</span>
+                    <div className="flex items-start gap-2">
+                      <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Requested Date & Time</p>
+                        <p className="font-medium text-foreground">{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</p>
+                      </div>
                     </div>
                   )}
+                  <div className="flex items-start gap-2">
+                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Confirmed At</p>
+                      <p className="font-medium text-foreground">{confirmationTime}</p>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Car className="h-4 w-4 text-accent" />
                     <span className="text-foreground">{booking["Vehicle Type"]}</span>
@@ -161,8 +174,11 @@ export default function ConfirmBookingPage() {
                   </div>
                 </div>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Your driver details will be sent to you before your pickup. Thank you for choosing Redmond Chauffeur Drive.
+              <p className="mt-4 text-sm text-muted-foreground">
+                Your booking confirmation will be sent to you via <strong>{replyMethod}</strong>. Your driver details will also be shared before your pickup.
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Thank you for choosing Redmond Chauffeur Drive.
               </p>
             </>
           ) : (
