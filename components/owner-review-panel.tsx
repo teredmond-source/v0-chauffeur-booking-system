@@ -56,7 +56,7 @@ export function OwnerReviewPanel() {
     fetchBookings();
   }, [fetchBookings]);
 
-  const handleSaveFare = async (requestId: string) => {
+  const handleSaveFare = async (requestId: string, rowIndex?: string) => {
     const fare = fareOverrides[requestId];
     if (!fare) return;
     setSavingFare(requestId);
@@ -64,7 +64,7 @@ export function OwnerReviewPanel() {
       const res = await fetch("/api/bookings/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, field: "Owner Fare", value: fare }),
+        body: JSON.stringify({ requestId, field: "Owner Fare", value: fare, rowIndex }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -81,13 +81,13 @@ export function OwnerReviewPanel() {
     }
   };
 
-  const handleStatusUpdate = async (requestId: string, newStatus: string) => {
+  const handleStatusUpdate = async (requestId: string, newStatus: string, rowIndex?: string) => {
     setUpdatingStatus(requestId);
     try {
       const res = await fetch("/api/bookings/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, field: "Status", value: newStatus }),
+        body: JSON.stringify({ requestId, field: "Status", value: newStatus, rowIndex }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -115,9 +115,10 @@ export function OwnerReviewPanel() {
     const time = booking["Time"] || "";
     const dateStr = date ? ` on ${date}${time ? ` at ${time}` : ""}` : "";
 
-    // Get the confirmation page URL
+    // Get the confirmation page URL - use row index for unique lookup
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const confirmUrl = `${baseUrl}/confirm/${requestId}`;
+    const rowIndex = booking["_rowIndex"] || "";
+    const confirmUrl = `${baseUrl}/confirm/${requestId}?row=${rowIndex}`;
 
     const message = `Hi ${name},\n\nThank you for reaching out to Redmond Chauffeur Drive.\n\nRegarding your booking Request ${requestId}, the Exact Fare for our ${vehicle} from ${from} to ${to}${dateStr} is \u20AC${fare}.\n\nPlease confirm or cancel your booking here:\n${confirmUrl}\n\nKind regards,\nRedmond Chauffeur Drive`;
 
@@ -329,7 +330,7 @@ export function OwnerReviewPanel() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleSaveFare(requestId)}
+                          onClick={() => handleSaveFare(requestId, uniqueKey)}
                           disabled={savingFare === requestId || !fareOverrides[requestId]}
                           className="flex items-center gap-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
                         >
@@ -346,7 +347,7 @@ export function OwnerReviewPanel() {
                           href={generateWhatsAppLink(booking)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => handleStatusUpdate(requestId, "Quoted")}
+                          onClick={() => handleStatusUpdate(requestId, "Quoted", uniqueKey)}
                           className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
                         >
                           <MessageCircle className="h-4 w-4" />
@@ -388,7 +389,7 @@ export function OwnerReviewPanel() {
                           </a>
                           <button
                             type="button"
-                            onClick={() => handleStatusUpdate(requestId, "Completed")}
+                            onClick={() => handleStatusUpdate(requestId, "Completed", uniqueKey)}
                             disabled={updatingStatus === requestId}
                             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                           >
@@ -402,7 +403,7 @@ export function OwnerReviewPanel() {
                         <button
                           type="button"
                           onClick={() => {
-                            handleStatusUpdate(requestId, "Cancelled");
+                            handleStatusUpdate(requestId, "Cancelled", uniqueKey);
                             window.open(generateCancelMessage(booking), "_blank");
                           }}
                           disabled={updatingStatus === requestId}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, Loader2, Car, MapPin, Calendar, Clock } from "lucide-react";
 
 interface BookingData {
@@ -28,7 +28,9 @@ interface BookingData {
 
 export default function ConfirmBookingPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const bookingId = params.bookingId as string;
+  const rowParam = searchParams.get("row");
 
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,14 @@ export default function ConfirmBookingPage() {
       const res = await fetch("/api/bookings");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      const found = data.bookings?.find((b: BookingData) => b["Request ID"] === bookingId);
+      // Find by row index first (unique), then fall back to Request ID
+      let found: BookingData | undefined;
+      if (rowParam) {
+        found = data.bookings?.find((b: BookingData) => b["_rowIndex"] === rowParam);
+      }
+      if (!found) {
+        found = data.bookings?.find((b: BookingData) => b["Request ID"] === bookingId);
+      }
       if (!found) throw new Error("Booking not found");
       setBooking(found);
 
@@ -69,6 +78,7 @@ export default function ConfirmBookingPage() {
           requestId: bookingId,
           field: "Status",
           value: newStatus,
+          rowIndex: booking?.["_rowIndex"] || rowParam || undefined,
         }),
       });
       const data = await res.json();

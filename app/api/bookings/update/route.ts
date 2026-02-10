@@ -17,7 +17,7 @@ const COL_MAP: Record<string, string> = {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { requestId, field, value } = body;
+    const { requestId, field, value, rowIndex: directRowIndex } = body;
 
     if (!requestId || !field || value === undefined) {
       return NextResponse.json(
@@ -34,14 +34,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find the row for this request ID
-    const bookings = await getBookings();
-    const booking = bookings.find((b) => b["Request ID"] === requestId);
-    if (!booking) {
-      return NextResponse.json({ error: `Booking ${requestId} not found` }, { status: 404 });
-    }
+    let rowIndex: string;
 
-    const rowIndex = booking["_rowIndex"];
+    if (directRowIndex) {
+      // Use the directly provided row index (most reliable)
+      rowIndex = String(directRowIndex);
+    } else {
+      // Fall back to finding by Request ID
+      const bookings = await getBookings();
+      const booking = bookings.find((b) => b["Request ID"] === requestId);
+      if (!booking) {
+        return NextResponse.json({ error: `Booking ${requestId} not found` }, { status: 404 });
+      }
+      rowIndex = booking["_rowIndex"];
+    }
     const range = `Bookings!${col}${rowIndex}`;
 
     await updateSheetCell(range, value);

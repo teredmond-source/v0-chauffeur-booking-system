@@ -3,27 +3,6 @@ import { calculateDistance } from "../../../lib/google-maps";
 import { calculateNTAFare } from "../../../lib/pricing";
 import { appendSheetRow, ensureSheetTab, getSheetData, updateSheetRow } from "../../../lib/google-sheets";
 
-// Generate a unique Request ID by reading the last ID from the sheet
-async function generateRequestId(): Promise<string> {
-  try {
-    const { getSheetData } = await import("../../../lib/google-sheets");
-    const data = await getSheetData("Bookings!A:A");
-    // Find the highest existing RD- number
-    let maxNum = 1000;
-    for (const row of data) {
-      const val = row[0];
-      if (val && val.startsWith("RD-")) {
-        const num = parseInt(val.replace("RD-", ""), 10);
-        if (!isNaN(num) && num > maxNum) maxNum = num;
-      }
-    }
-    return `RD-${maxNum + 1}`;
-  } catch {
-    // Fallback: use timestamp-based ID
-    return `RD-${Date.now().toString().slice(-6)}`;
-  }
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -62,8 +41,6 @@ export async function POST(request: Request) {
     const vehicleMinFare = minFare || 15;
     const finalFare = adjustedFare || Math.round(Math.max(ntaFare, vehicleMinFare));
 
-    // Step 4: Generate Request ID
-    const requestId = await generateRequestId();
     const timestamp = new Date().toISOString();
 
     // Step 5: Write to Google Sheets - Bookings tab
@@ -93,6 +70,24 @@ export async function POST(request: Request) {
         }
       }
     }
+
+    // Generate unique Request ID by reading existing IDs from the now-guaranteed sheet
+    let maxNum = 1000;
+    try {
+      const idData = await getSheetData("Bookings!A:A");
+      console.log("[v0] All IDs in column A:", JSON.stringify(idData.map((r: string[]) => r[0])));
+      for (const row of idData) {
+        const val = row[0];
+        if (val && val.startsWith("RD-")) {
+          const num = parseInt(val.replace("RD-", ""), 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      }
+    } catch (e) {
+      console.log("[v0] Failed to read IDs, using timestamp fallback:", e);
+    }
+    const requestId = `RD-${maxNum + 1}`;
+    console.log("[v0] Generated new Request ID:", requestId);
 
     const rowData = [
       requestId,
