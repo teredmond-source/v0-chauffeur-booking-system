@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
-import { calculateDistance } from "../../../lib/google-maps";
-import { calculateNTAFare } from "../../../lib/pricing";
-import { appendSheetRow } from "../../../lib/google-sheets";
 
 let counter = 0;
 
 export async function POST(request: Request) {
+  console.log("[v0] BOOKING ROUTE HIT");
+
   try {
     const body = await request.json();
+    console.log("[v0] Body received:", body.customerName);
+
     const {
-      customerName,
-      phone,
-      email,
-      generalQuery,
-      pickupEircode,
-      destinationEircode,
-      vehicleType,
-      passengers,
-      pickupDate,
-      pickupTime,
-      minFare,
-      preferredReply,
+      customerName = "",
+      phone = "",
+      email = "",
+      generalQuery = "",
+      pickupEircode = "",
+      destinationEircode = "",
+      vehicleType = "",
+      passengers = "1",
+      pickupDate = "",
+      pickupTime = "",
+      minFare = 15,
+      preferredReply = "whatsapp",
     } = body;
 
     if (!customerName || !pickupEircode || !destinationEircode) {
@@ -30,76 +31,81 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate unique Request ID using timestamp + counter
+    // Simple unique Request ID
     counter++;
-    const ts = Date.now().toString().slice(-4);
-    const requestId = `RD-${ts}${counter}`;
+    const requestId = `RD-${Date.now().toString().slice(-5)}${counter}`;
     const timestamp = new Date().toISOString();
 
-    // Calculate distance
+    // Calculate distance using Google Maps
     let distanceKm = 0;
     let durationMinutes = 0;
     let originAddress = pickupEircode;
     let destinationAddress = destinationEircode;
     try {
-      const distance = await calculateDistance(pickupEircode, destinationEircode);
-      distanceKm = distance.distanceKm;
-      durationMinutes = distance.durationMinutes;
-      originAddress = distance.originAddress || pickupEircode;
-      destinationAddress = distance.destinationAddress || destinationEircode;
-    } catch {
-      // Distance calculation failed - continue without it
+      const { calculateDistance } = await import("@/lib/google-maps");
+      const dist = await calculateDistance(pickupEircode, destinationEircode);
+      distanceKm = dist.distanceKm;
+      durationMinutes = dist.durationMinutes;
+      originAddress = dist.originAddress || pickupEircode;
+      destinationAddress = dist.destinationAddress || destinationEircode;
+      console.log("[v0] Distance calculated:", distanceKm, "km");
+    } catch (e) {
+      console.log("[v0] Distance calc failed:", e instanceof Error ? e.message : e);
     }
 
-    // Calculate fare
+    // Calculate NTA fare
     let ntaFare = 0;
     try {
+      const { calculateNTAFare } = await import("@/lib/pricing");
       const result = calculateNTAFare(distanceKm, durationMinutes);
       ntaFare = result.totalFare;
-    } catch {
-      // Fare calculation failed - continue without it
+      console.log("[v0] Fare calculated:", ntaFare);
+    } catch (e) {
+      console.log("[v0] Fare calc failed:", e instanceof Error ? e.message : e);
     }
-    const vehicleMinFare = minFare || 15;
-    const finalFare = Math.round(Math.max(ntaFare, vehicleMinFare));
+    const finalFare = Math.round(Math.max(ntaFare, Number(minFare) || 15));
 
+    // Build row data
     const rowData = [
       requestId,
-      customerName || "",
-      phone || "",
-      email || "",
-      generalQuery || "",
-      pickupEircode || "",
-      destinationEircode || "",
-      vehicleType || "",
-      pickupDate || "",
-      pickupTime || "",
-      passengers?.toString() || "1",
-      distanceKm.toString(),
-      durationMinutes.toString(),
+      customerName,
+      phone,
+      email,
+      generalQuery,
+      pickupEircode,
+      destinationEircode,
+      vehicleType,
+      pickupDate,
+      pickupTime,
+      String(passengers),
+      String(distanceKm),
+      String(durationMinutes),
       ntaFare.toFixed(2),
-      finalFare.toString(),
+      String(finalFare),
       "Requested",
       timestamp,
       originAddress,
       destinationAddress,
       "",
-      preferredReply || "whatsapp",
+      preferredReply,
     ];
 
+    console.log("[v0] Writing row to sheet:", rowData[0], rowData[1], rowData[2]);
+
+    // Write to Google Sheet
+    const { appendSheetRow } = await import("@/lib/google-sheets");
     await appendSheetRow("Bookings!A:U", [rowData]);
+
+    console.log("[v0] Row written successfully");
 
     return NextResponse.json({
       success: true,
       bookingId: requestId,
-      distance: {
-        km: distanceKm,
-        minutes: durationMinutes,
-        originAddress,
-        destinationAddress,
-      },
+      distance: { km: distanceKm, minutes: durationMinutes, originAddress, destinationAddress },
       fare: { totalFare: finalFare },
     });
   } catch (error) {
+    console.log("[v0] BOOKING ERROR:", error instanceof Error ? error.message : error);
     const message = error instanceof Error ? error.message : "An unexpected error occurred";
     return NextResponse.json({ error: message }, { status: 500 });
   }
