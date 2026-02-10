@@ -374,45 +374,47 @@ export function OwnerReviewPanel() {
                         const sentTime = confirmSentTimes[uniqueKey];
                         return (
                         <>
-                          <a
-                            href={generateConfirmMessage(booking)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => setConfirmSentTimes((prev) => ({ ...prev, [uniqueKey]: new Date().toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" }) }))}
-                            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white ${sentTime ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
-                          >
-                            <Send className="h-4 w-4" />
-                            {sentTime ? `Sent Confirmation via ${replyMethod} on ${sentTime}` : `Send Confirmation via ${replyMethod}`}
-                          </a>
+                          <div className="flex gap-3">
+                            <a
+                              href={generateConfirmMessage(booking)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => setConfirmSentTimes((prev) => ({ ...prev, [uniqueKey]: new Date().toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" }) }))}
+                              className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white ${sentTime ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                            >
+                              <Send className="h-4 w-4" />
+                              {sentTime ? `Sent Confirmation via ${replyMethod} on ${sentTime}` : `Send Confirmation via ${replyMethod}`}
+                            </a>
+                            {status === "Completed" ? (
+                              <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Job Completed
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm("Has this job been completed? This action cannot be undone.")) {
+                                    handleStatusUpdate(requestId, "Completed", uniqueKey);
+                                  }
+                                }}
+                                disabled={updatingStatus === requestId}
+                                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                                {updatingStatus === requestId ? "Updating..." : "Confirm When Job is Completed"}
+                              </button>
+                            )}
+                          </div>
                           <a
                             href={`/dispatch/${requestId}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                            className="flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
                           >
                             <Navigation className="h-4 w-4" />
                             Driver Dispatch Link
                           </a>
-                          {status === "Completed" ? (
-                            <div className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white">
-                              <CheckCircle2 className="h-4 w-4" />
-                              Job Completed
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (window.confirm("Has this job been completed? This action cannot be undone.")) {
-                                  handleStatusUpdate(requestId, "Completed", uniqueKey);
-                                }
-                              }}
-                              disabled={updatingStatus === requestId}
-                              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                              {updatingStatus === requestId ? "Updating..." : "Confirm When Job is Completed"}
-                            </button>
-                          )}
                         </>
                         );
                       })()}
