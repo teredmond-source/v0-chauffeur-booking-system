@@ -6,6 +6,7 @@ import {
   FileText, Loader2, CheckCircle2, AlertCircle,
   Car, MessageCircle,
 } from "lucide-react";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 
 interface VehicleOption {
   name: string;
@@ -293,38 +294,22 @@ export function BookingForm() {
             Journey Details
           </h4>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="pickup" className="mb-1 block text-xs font-medium text-muted-foreground">
-                Pickup Eircode / Address <span className="text-destructive">*</span>
-              </label>
-              <input
-                id="pickup"
-                type="text"
-                value={pickupEircode}
-                onChange={(e) => setPickupEircode(e.target.value)}
-                placeholder="e.g. D02 X285 or 12 O'Connell St, Dublin"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-              />
-              <p className="mt-1 text-xs text-muted-foreground/70">
-                Enter an Irish Eircode (e.g. D02 X285) or full address including town/city. Ireland only.
-              </p>
-            </div>
-            <div>
-              <label htmlFor="destination" className="mb-1 block text-xs font-medium text-muted-foreground">
-                Destination Eircode / Address <span className="text-destructive">*</span>
-              </label>
-              <input
-                id="destination"
-                type="text"
-                value={destinationEircode}
-                onChange={(e) => setDestinationEircode(e.target.value)}
-                placeholder="e.g. T12 AB34 or Dublin Airport, Co. Dublin"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-              />
-              <p className="mt-1 text-xs text-muted-foreground/70">
-                Enter an Irish Eircode (e.g. T12 AB34) or full address including town/city. Ireland only.
-              </p>
-            </div>
+            <AddressAutocomplete
+              id="pickup"
+              value={pickupEircode}
+              onChange={setPickupEircode}
+              label="Pickup Eircode / Address"
+              placeholder="e.g. D02 X285 or 12 O'Connell St, Dublin"
+              required
+            />
+            <AddressAutocomplete
+              id="destination"
+              value={destinationEircode}
+              onChange={setDestinationEircode}
+              label="Destination Eircode / Address"
+              placeholder="e.g. T12 AB34 or Dublin Airport, Co. Dublin"
+              required
+            />
           </div>
         </div>
 
