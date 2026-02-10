@@ -188,7 +188,7 @@ export function BookingForm() {
             onClick={handleReset}
             className="mt-6 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            New Booking Request
+            Return to Booking Request
           </button>
         </div>
       </div>
