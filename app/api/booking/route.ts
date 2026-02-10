@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     let originAddress = pickupEircode;
     let destinationAddress = destinationEircode;
     try {
-      const { calculateDistance } = await import("@/lib/google-maps");
+      const { calculateDistance } = await import("../../../lib/google-maps");
       const dist = await calculateDistance(pickupEircode, destinationEircode);
       distanceKm = dist.distanceKm;
       durationMinutes = dist.durationMinutes;
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     // Calculate NTA fare
     let ntaFare = 0;
     try {
-      const { calculateNTAFare } = await import("@/lib/pricing");
+      const { calculateNTAFare } = await import("../../../lib/pricing");
       const result = calculateNTAFare(distanceKm, durationMinutes);
       ntaFare = result.totalFare;
       console.log("[v0] Fare calculated:", ntaFare);
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     console.log("[v0] Writing row to sheet:", rowData[0], rowData[1], rowData[2]);
 
     // Write to Google Sheet
-    const { appendSheetRow } = await import("@/lib/google-sheets");
+    const { appendSheetRow } = await import("../../../lib/google-sheets");
     await appendSheetRow("Bookings!A:U", [rowData]);
 
     console.log("[v0] Row written successfully");
