@@ -345,6 +345,9 @@ export default function Home() {
   const [vehicles, setVehicles] = useState<SheetRecord[]>([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [vehiclesError, setVehiclesError] = useState<string | null>(null);
+  const [bookings, setBookings] = useState<SheetRecord[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [bookingsExpanded, setBookingsExpanded] = useState(false);
 
 
   const fetchDrivers = useCallback(async () => {
@@ -377,10 +380,25 @@ export default function Home() {
     }
   }, []);
 
+  const fetchBookings = useCallback(async () => {
+    setBookingsLoading(true);
+    try {
+      const res = await fetch("/api/bookings");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch bookings");
+      setBookings(data.bookings || []);
+    } catch {
+      setBookings([]);
+    } finally {
+      setBookingsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDrivers();
     fetchVehicles();
-  }, [fetchDrivers, fetchVehicles]);
+    fetchBookings();
+  }, [fetchDrivers, fetchVehicles, fetchBookings]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -391,8 +409,97 @@ export default function Home() {
           <p className="mt-1 text-sm text-muted-foreground">Create bookings, calculate fares, and manage dispatch.</p>
         </div>
 
-        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard label="Today's Bookings" value="--" icon={CalendarCheck} />
+        {/* All Booking Requests - Full Width */}
+        <div className="mb-8 rounded-xl border border-border bg-card">
+          <button
+            type="button"
+            onClick={() => setBookingsExpanded(!bookingsExpanded)}
+            className="flex w-full items-center justify-between px-5 py-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                <CalendarCheck className="h-5 w-5 text-accent" />
+              </div>
+              <div className="text-left">
+                <p className="text-2xl font-bold text-foreground">
+                  {bookingsLoading ? "..." : String(bookings.length)}
+                </p>
+                <p className="text-xs text-muted-foreground">All Booking Requests</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); fetchBookings(); }}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <RefreshCw className="h-3 w-3" /> Refresh
+              </button>
+              {bookingsExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
+            </div>
+          </button>
+          {bookingsExpanded && (
+            <div className="border-t border-border px-5 pb-5">
+              {bookingsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading bookings...</span>
+                </div>
+              ) : bookings.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No bookings yet. Submit a booking request to get started.</p>
+              ) : (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Request ID</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Customer</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Phone</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">From</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">To</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Vehicle</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Date</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Pax</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Distance</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Fare</th>
+                        <th className="whitespace-nowrap px-2 py-2 font-semibold text-muted-foreground">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bookings.map((b, i) => {
+                        const status = b["Status"] || "Requested";
+                        const statusColor = status === "Confirmed" ? "text-green-600 bg-green-50" :
+                          status === "Cancelled" ? "text-red-600 bg-red-50" :
+                          status === "Quoted" ? "text-blue-600 bg-blue-50" :
+                          status === "Completed" ? "text-primary bg-primary/10" :
+                          "text-amber-600 bg-amber-50";
+                        return (
+                          <tr key={i} className="border-b border-border/50 hover:bg-secondary/30">
+                            <td className="whitespace-nowrap px-2 py-2 font-mono font-medium text-foreground">{b["Request ID"] || "-"}</td>
+                            <td className="whitespace-nowrap px-2 py-2 text-foreground">{b["Customer Name"] || "-"}</td>
+                            <td className="whitespace-nowrap px-2 py-2 text-foreground">{b["Phone"] || "-"}</td>
+                            <td className="px-2 py-2 text-foreground max-w-[140px] truncate">{b["Origin Address"] || b["Pickup Eircode"] || "-"}</td>
+                            <td className="px-2 py-2 text-foreground max-w-[140px] truncate">{b["Destination Address"] || b["Destination Eircode"] || "-"}</td>
+                            <td className="whitespace-nowrap px-2 py-2 text-foreground">{b["Vehicle Type"] || "-"}</td>
+                            <td className="whitespace-nowrap px-2 py-2 text-foreground">{b["Date"] || "-"}{b["Time"] ? ` ${b["Time"]}` : ""}</td>
+                            <td className="whitespace-nowrap px-2 py-2 text-center text-foreground">{b["Pax"] || "-"}</td>
+                            <td className="whitespace-nowrap px-2 py-2 text-foreground">{b["Distance KM"] ? `${b["Distance KM"]} km` : "-"}{b["Travel Time"] ? ` (${b["Travel Time"]} min)` : ""}</td>
+                            <td className="whitespace-nowrap px-2 py-2 font-medium text-foreground">{b["Owner Fare"] ? `\u20AC${b["Owner Fare"]}` : b["Adjusted Fare"] ? `\u20AC${b["Adjusted Fare"]}` : "-"}</td>
+                            <td className="whitespace-nowrap px-2 py-2">
+                              <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColor}`}>{status}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard label="Active Drivers" value={driversLoading ? "..." : String(drivers.length)} icon={Users} />
           <StatCard label="Fleet Vehicles" value={vehiclesLoading ? "..." : String(vehicles.length)} icon={Car} />
           <StatCard label="Avg Fare (NTA 2026)" value="--" icon={TrendingUp} variant="accent" />

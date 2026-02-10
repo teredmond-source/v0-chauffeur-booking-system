@@ -43,11 +43,6 @@ export function OwnerReviewPanel() {
     try {
       const res = await fetch("/api/bookings");
       const data = await res.json();
-      console.log("[v0] Bookings API response:", JSON.stringify(data).slice(0, 1000));
-      if (data.bookings && data.bookings.length > 0) {
-        console.log("[v0] First booking keys:", Object.keys(data.bookings[0]).join(", "));
-        console.log("[v0] First booking data:", JSON.stringify(data.bookings[0]));
-      }
       if (!res.ok) throw new Error(data.error || "Failed to fetch bookings");
       setBookings(data.bookings || []);
     } catch (err) {
