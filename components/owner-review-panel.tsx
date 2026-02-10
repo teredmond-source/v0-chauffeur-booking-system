@@ -17,6 +17,7 @@ export function OwnerReviewPanel() {
   const [error, setError] = useState<string | null>(null);
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
   const [fareOverrides, setFareOverrides] = useState<Record<string, string>>({});
+  const [confirmSentTimes, setConfirmSentTimes] = useState<Record<string, string>>({});
   const [savingFare, setSavingFare] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -368,16 +369,20 @@ export function OwnerReviewPanel() {
                         </a>
                       )}
 
-                      {status === "Confirmed" && (
+                      {status === "Confirmed" && (() => {
+                        const replyMethod = (booking["Preferred Reply"] || "whatsapp") === "email" ? "Email" : "WhatsApp";
+                        const sentTime = confirmSentTimes[uniqueKey];
+                        return (
                         <>
                           <a
                             href={generateConfirmMessage(booking)}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => setConfirmSentTimes((prev) => ({ ...prev, [uniqueKey]: new Date().toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" }) }))}
                             className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
                           >
                             <Send className="h-4 w-4" />
-                            Send Confirmation via WhatsApp
+                            {sentTime ? `Sent Confirmation via ${replyMethod} on ${sentTime}` : `Send Confirmation via ${replyMethod}`}
                           </a>
                           <a
                             href={`/dispatch/${requestId}`}
@@ -398,7 +403,8 @@ export function OwnerReviewPanel() {
                             Mark Completed
                           </button>
                         </>
-                      )}
+                        );
+                      })()}
 
                       {(status === "Requested" || status === "Quoted") && (
                         <button
