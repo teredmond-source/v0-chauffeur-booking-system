@@ -393,15 +393,26 @@ export function OwnerReviewPanel() {
                             <Navigation className="h-4 w-4" />
                             Driver Dispatch Link
                           </a>
-                          <button
-                            type="button"
-                            onClick={() => handleStatusUpdate(requestId, "Completed", uniqueKey)}
-                            disabled={updatingStatus === requestId}
-                            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Mark Completed
-                          </button>
+                          {status === "Completed" ? (
+                            <div className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Job Completed
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm("Has this job been completed? This action cannot be undone.")) {
+                                  handleStatusUpdate(requestId, "Completed", uniqueKey);
+                                }
+                              }}
+                              disabled={updatingStatus === requestId}
+                              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              {updatingStatus === requestId ? "Updating..." : "Confirm When Job is Completed"}
+                            </button>
+                          )}
                         </>
                         );
                       })()}
