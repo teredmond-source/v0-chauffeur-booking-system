@@ -20,6 +20,22 @@ export function OwnerReviewPanel() {
   const [savingFare, setSavingFare] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [settingUpHeaders, setSettingUpHeaders] = useState(false);
+
+  const handleSetupHeaders = async () => {
+    setSettingUpHeaders(true);
+    try {
+      const res = await fetch("/api/setup-headers", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      alert(`Headers setup complete: ${data.message}`);
+      fetchBookings();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to set up headers");
+    } finally {
+      setSettingUpHeaders(false);
+    }
+  };
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -181,6 +197,15 @@ export function OwnerReviewPanel() {
             <option value="Cancelled">Cancelled</option>
             <option value="Completed">Completed</option>
           </select>
+          <button
+            type="button"
+            onClick={handleSetupHeaders}
+            disabled={settingUpHeaders}
+            className="flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+          >
+            {settingUpHeaders ? <Loader2 className="h-3 w-3 animate-spin" /> : <Edit3 className="h-3 w-3" />}
+            Fix Headers
+          </button>
           <button
             type="button"
             onClick={fetchBookings}

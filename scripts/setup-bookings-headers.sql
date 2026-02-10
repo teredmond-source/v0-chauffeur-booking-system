@@ -1,0 +1,2 @@
+-- This is a placeholder. The actual setup is done via an API endpoint.
+-- See /api/setup-headers

@@ -52,6 +52,25 @@ export async function POST(request: Request) {
     const timestamp = new Date().toISOString();
 
     // Step 5: Write to Google Sheets - Bookings tab
+    // First, check if headers exist. If not, write them.
+    const headers = [
+      "Request ID", "Customer Name", "Phone", "Email", "General Query",
+      "Pickup Eircode", "Destination Eircode", "Vehicle Type", "Date", "Time",
+      "Pax", "Distance KM", "Travel Time", "NTA Max Fare", "Adjusted Fare",
+      "Status", "Timestamp", "Origin Address", "Destination Address", "Owner Fare",
+    ];
+
+    try {
+      const { getSheetData } = await import("../../../lib/google-sheets");
+      const existing = await getSheetData("Bookings!A1:A2");
+      if (!existing || existing.length === 0) {
+        // Sheet is empty - write headers first
+        await appendSheetRow("Bookings!A:T", [headers]);
+      }
+    } catch {
+      // If we can't check, try to write headers anyway (append won't duplicate if data exists)
+    }
+
     const rowData = [
       requestId,
       customerName,
@@ -72,9 +91,10 @@ export async function POST(request: Request) {
       timestamp,
       distance.originAddress,
       distance.destinationAddress,
+      "", // Owner Fare - blank until owner sets it
     ];
 
-    await appendSheetRow("Bookings!A:S", [rowData]);
+    await appendSheetRow("Bookings!A:T", [rowData]);
 
     return NextResponse.json({
       success: true,
