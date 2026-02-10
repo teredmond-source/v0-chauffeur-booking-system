@@ -42,8 +42,8 @@ export async function POST(request: Request) {
     const originAddress = distance.originAddress || pickupEircode;
     const destinationAddress = distance.destinationAddress || destinationEircode;
 
-    // Calculate NTA fare
-    const fareResult = calculateNTAFare(distanceKm, durationMinutes);
+    // Calculate NTA fare based on pickup date/time (determines Standard/Premium/Special rate)
+    const fareResult = calculateNTAFare(distanceKm, durationMinutes, pickupDate, pickupTime);
     const ntaFare = fareResult.totalFare;
     const finalFare = Math.round(Math.max(ntaFare, Number(minFare) || 15));
 

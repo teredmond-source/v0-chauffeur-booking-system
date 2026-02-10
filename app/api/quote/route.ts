@@ -5,7 +5,7 @@ import { calculateNTAFare } from "../../../lib/pricing";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { pickupEircode, destinationEircode } = body;
+    const { pickupEircode, destinationEircode, pickupDate, pickupTime } = body;
 
     if (!pickupEircode || !destinationEircode) {
       return NextResponse.json(
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const distance = await calculateDistance(pickupEircode, destinationEircode);
-    const fare = calculateNTAFare(distance.distanceKm, distance.durationMinutes);
+    const fare = calculateNTAFare(distance.distanceKm, distance.durationMinutes, pickupDate, pickupTime);
 
     return NextResponse.json({
       distance: {
