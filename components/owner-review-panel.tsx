@@ -171,7 +171,7 @@ export function OwnerReviewPanel() {
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-card p-6">
-        <h3 className="mb-4 text-lg font-semibold text-foreground">Booking Requests</h3>
+        <h3 className="mb-4 text-lg font-semibold text-foreground">Client Requests</h3>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           <span className="ml-2 text-sm text-muted-foreground">Loading bookings...</span>
@@ -184,7 +184,7 @@ export function OwnerReviewPanel() {
     <div className="rounded-xl border border-border bg-card p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-foreground">
-          Booking Requests
+          Client Requests
           <span className="ml-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-accent/10 px-2 text-xs font-bold text-accent">
             {filteredBookings.length}
           </span>
@@ -202,15 +202,6 @@ export function OwnerReviewPanel() {
             <option value="Cancelled">Cancelled</option>
             <option value="Completed">Completed</option>
           </select>
-          <button
-            type="button"
-            onClick={handleSetupHeaders}
-            disabled={settingUpHeaders}
-            className="flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-50"
-          >
-            {settingUpHeaders ? <Loader2 className="h-3 w-3 animate-spin" /> : <Edit3 className="h-3 w-3" />}
-            Fix Headers
-          </button>
           <button
             type="button"
             onClick={fetchBookings}

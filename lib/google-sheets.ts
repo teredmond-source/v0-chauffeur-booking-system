@@ -82,16 +82,29 @@ export async function ensureSheetTab(tabName: string) {
   return true; // tab already existed
 }
 
+const BOOKING_HEADERS = [
+  "Request ID", "Customer Name", "Phone", "Email", "General Query",
+  "Pickup Eircode", "Destination Eircode", "Vehicle Type", "Date", "Time",
+  "Pax", "Distance KM", "Travel Time", "NTA Max Fare", "Adjusted Fare",
+  "Status", "Timestamp", "Origin Address", "Destination Address", "Owner Fare",
+];
+
 export async function getBookings() {
-  const data = await getSheetData("Bookings!A1:Z");
-  if (data.length < 2) return [];
-  const headers = data[0];
-  return data.slice(1).map((row: string[], rowIndex: number) => {
+  const data = await getSheetData("Bookings!A1:T");
+  if (!data || data.length === 0) return [];
+
+  // Check if first row is headers
+  const firstRow = data[0];
+  const hasHeaders = firstRow[0] === "Request ID";
+  const dataRows = hasHeaders ? data.slice(1) : data;
+  const startRow = hasHeaders ? 2 : 1;
+
+  return dataRows.map((row: string[], rowIndex: number) => {
     const obj: Record<string, string> = {};
-    headers.forEach((h: string, i: number) => {
+    BOOKING_HEADERS.forEach((h: string, i: number) => {
       obj[h] = row[i] || "";
     });
-    obj["_rowIndex"] = String(rowIndex + 2); // 1-indexed, +1 for header
+    obj["_rowIndex"] = String(rowIndex + startRow);
     return obj;
   });
 }
