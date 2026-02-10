@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   MapPin, Clock, Users, Phone, Mail, User,
   FileText, Loader2, CheckCircle2, AlertCircle,
-  ArrowRight, Calculator, Car,
+  Car, MessageCircle,
 } from "lucide-react";
 
 interface VehicleOption {
@@ -13,37 +13,6 @@ interface VehicleOption {
   maxPassengers: number;
   minFare: number;
   photo: string;
-}
-
-interface FareBreakdown {
-  initialCharge: number;
-  preBookingFee: number;
-  tariffA: number;
-  tariffB: number;
-  totalFare: number;
-  distanceKm: number;
-  durationMinutes: number;
-}
-
-interface QuoteResult {
-  distance: {
-    km: number;
-    minutes: number;
-    originAddress: string;
-    destinationAddress: string;
-  };
-  fare: FareBreakdown;
-}
-
-interface BookingResult {
-  bookingId: string;
-  distance: {
-    km: number;
-    minutes: number;
-    originAddress: string;
-    destinationAddress: string;
-  };
-  fare: FareBreakdown;
 }
 
 export function BookingForm() {
@@ -57,15 +26,13 @@ export function BookingForm() {
   const [passengers, setPassengers] = useState("1");
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
+  const [preferredReply, setPreferredReply] = useState<"whatsapp" | "email">("whatsapp");
 
   const [vehicleOptions, setVehicleOptions] = useState<VehicleOption[]>([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
 
-  const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
-  const [adjustedFare, setAdjustedFare] = useState<number | null>(null);
-  const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch vehicles from the sheet for the dropdown
@@ -80,13 +47,11 @@ export function BookingForm() {
             const colour = v["Colour"] || v["Color"] || "";
             const maxPax = parseInt(v["Max Passengers"] || v["Max Pax"] || v["Passengers"] || "4", 10);
             const minFare = parseFloat(v["Min Fare"] || v["Minimum Fare"] || "15");
-            // Find photo URL
             let photo = "";
             for (const [key, val] of Object.entries(v)) {
               if (val && typeof val === "string" && (val.startsWith("http://") || val.startsWith("https://")) &&
                 (key.toLowerCase().includes("photo") || key.toLowerCase().includes("image") || key.toLowerCase().includes("pic") ||
                   /drive\.google\.com/i.test(val))) {
-                // Convert Google Drive URL
                 const match = val.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
                 if (match) {
                   photo = `https://lh3.googleusercontent.com/d/${match[1]}`;
@@ -102,7 +67,6 @@ export function BookingForm() {
           if (options.length > 0) setSelectedVehicle(options[0].name);
         }
       } catch {
-        // Fallback vehicle options
         setVehicleOptions([
           { name: "Mercedes E-Class", colour: "Black", maxPassengers: 3, minFare: 15, photo: "" },
           { name: "Mercedes Vito", colour: "Black", maxPassengers: 7, minFare: 20, photo: "" },
@@ -119,15 +83,6 @@ export function BookingForm() {
   const maxPax = currentVehicle?.maxPassengers || 4;
   const minFare = currentVehicle?.minFare || 15;
 
-  // Recalculate adjusted fare when vehicle or quote changes
-  useEffect(() => {
-    if (quoteResult) {
-      const ntaFare = quoteResult.fare.totalFare;
-      const rounded = Math.round(Math.max(ntaFare, minFare));
-      setAdjustedFare(rounded);
-    }
-  }, [quoteResult, minFare]);
-
   // Clamp passengers when vehicle changes
   useEffect(() => {
     if (parseInt(passengers) > maxPax) {
@@ -135,33 +90,7 @@ export function BookingForm() {
     }
   }, [maxPax, passengers]);
 
-  const handleGetQuote = async () => {
-    if (!pickupEircode || !destinationEircode) {
-      setError("Please enter both Pickup and Destination Eircodes.");
-      return;
-    }
-    setQuoteLoading(true);
-    setError(null);
-    setQuoteResult(null);
-    setBookingResult(null);
-    setAdjustedFare(null);
-    try {
-      const res = await fetch("/api/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pickupEircode, destinationEircode }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to get quote");
-      setQuoteResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get quote");
-    } finally {
-      setQuoteLoading(false);
-    }
-  };
-
-  const handleSubmitBooking = async () => {
+  const handleSubmit = async () => {
     if (!customerName) {
       setError("Please enter your name.");
       return;
@@ -170,7 +99,19 @@ export function BookingForm() {
       setError("Please enter a phone number or email so we can contact you.");
       return;
     }
-    setBookingLoading(true);
+    if (preferredReply === "whatsapp" && !phone) {
+      setError("Please enter a phone number for WhatsApp replies.");
+      return;
+    }
+    if (preferredReply === "email" && !email) {
+      setError("Please enter an email address for email replies.");
+      return;
+    }
+    if (!pickupEircode || !destinationEircode) {
+      setError("Please enter both Pickup and Destination Eircodes.");
+      return;
+    }
+    setSubmitting(true);
     setError(null);
     try {
       const res = await fetch("/api/booking", {
@@ -188,16 +129,16 @@ export function BookingForm() {
           pickupDate,
           pickupTime,
           minFare,
-          adjustedFare,
+          preferredReply,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to submit booking request");
-      setBookingResult(data);
+      if (!res.ok) throw new Error(data.error || "Failed to submit request");
+      setBookingId(data.bookingId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit booking request");
+      setError(err instanceof Error ? err.message : "Failed to submit request");
     } finally {
-      setBookingLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -212,60 +153,36 @@ export function BookingForm() {
     setPassengers("1");
     setPickupDate("");
     setPickupTime("");
-    setQuoteResult(null);
-    setAdjustedFare(null);
-    setBookingResult(null);
+    setPreferredReply("whatsapp");
+    setBookingId(null);
     setError(null);
   };
 
-  // Booking submitted view
-  if (bookingResult) {
+  // Success view
+  if (bookingId) {
     return (
       <div className="rounded-xl border border-border bg-card p-8">
         <div className="flex flex-col items-center text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle2 className="h-8 w-8 text-green-600" />
           </div>
-          <h3 className="mt-5 text-xl font-semibold text-foreground">Booking Request Submitted</h3>
+          <h3 className="mt-5 text-xl font-semibold text-foreground">Request Submitted Successfully</h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your request reference is <span className="font-mono font-bold text-foreground">{bookingResult.bookingId}</span>
+            Your request reference is <span className="font-mono font-bold text-foreground">{bookingId}</span>
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            We will review your request and get back to you shortly with the confirmed fare.
-          </p>
-
-          <div className="mt-6 w-full max-w-lg rounded-lg border border-border bg-secondary/30 p-5 text-left">
-            <div className="space-y-2.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">From:</span>
-                <span className="text-right font-medium text-foreground">{bookingResult.distance.originAddress}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">To:</span>
-                <span className="text-right font-medium text-foreground">{bookingResult.distance.destinationAddress}</span>
-              </div>
-              <div className="border-t border-border pt-2" />
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Distance:</span>
-                <span className="font-medium text-foreground">{bookingResult.distance.km} km</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Est. Travel Time:</span>
-                <span className="font-medium text-foreground">{bookingResult.distance.minutes} mins</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Vehicle:</span>
-                <span className="font-medium text-foreground">{selectedVehicle}</span>
-              </div>
-              <div className="border-t border-border pt-2" />
-              <div className="flex justify-between text-base font-bold">
-                <span className="text-foreground">Estimated Fare:</span>
-                <span className="text-accent">{"\u20AC"}{adjustedFare || Math.round(bookingResult.fare.totalFare)}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Final fare will be confirmed by Redmond Chauffeur Drive.</p>
-            </div>
+          <div className="mx-auto mt-5 max-w-md rounded-lg border border-border bg-secondary/30 p-5">
+            <p className="text-sm leading-relaxed text-foreground">
+              Thank you for choosing <span className="font-semibold">Redmond Chauffeur Drive</span>.
+              We have received your booking request and will review it promptly.
+              A member of our team will be in touch shortly via
+              {preferredReply === "whatsapp" ? (
+                <span className="font-medium text-green-600"> WhatsApp </span>
+              ) : (
+                <span className="font-medium text-accent"> email </span>
+              )}
+              to confirm your fare and availability.
+            </p>
           </div>
-
           <button
             type="button"
             onClick={handleReset}
@@ -283,7 +200,7 @@ export function BookingForm() {
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-foreground">Booking Request</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Fill in your details below to get a fare estimate and submit your booking request.
+          Fill in your details below and we will get back to you with a fare quote and availability.
         </p>
       </div>
 
@@ -343,6 +260,40 @@ export function BookingForm() {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Preferred Reply Method */}
+        <div>
+          <h4 className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+            <MessageCircle className="h-4 w-4 text-accent" />
+            How would you like us to reply?
+          </h4>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setPreferredReply("whatsapp")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                preferredReply === "whatsapp"
+                  ? "border-green-500 bg-green-50 text-green-700"
+                  : "border-border bg-background text-muted-foreground hover:border-green-300 hover:bg-green-50/50"
+              }`}
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreferredReply("email")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                preferredReply === "email"
+                  ? "border-accent bg-accent/5 text-accent"
+                  : "border-border bg-background text-muted-foreground hover:border-accent/40 hover:bg-accent/5"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </button>
           </div>
         </div>
 
@@ -444,7 +395,6 @@ export function BookingForm() {
                         <p className="text-xs text-muted-foreground">Colour: {vehicle.colour}</p>
                       )}
                       <p className="text-xs text-muted-foreground">Max {vehicle.maxPassengers} passengers</p>
-                      <p className="mt-1 text-xs font-medium text-accent">Min fare: {"\u20AC"}{vehicle.minFare}</p>
                     </div>
                     {isSelected && (
                       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent">
@@ -508,91 +458,24 @@ export function BookingForm() {
           </div>
         </div>
 
-        {/* Get Fare Estimate Button */}
-        <button
-          type="button"
-          onClick={handleGetQuote}
-          disabled={quoteLoading || !pickupEircode || !destinationEircode}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50 sm:w-auto"
-        >
-          {quoteLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Calculating Fare...
-            </>
-          ) : (
-            <>
-              <Calculator className="h-4 w-4" />
-              Get Fare Estimate
-            </>
-          )}
-        </button>
-
-        {/* Quote Result */}
-        {quoteResult && adjustedFare !== null && (
-          <div className="rounded-lg border border-accent/30 bg-accent/5 p-5">
-            <h4 className="mb-3 text-sm font-semibold text-foreground">Fare Estimate</h4>
-            <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3 shrink-0 text-accent" />
-              <span className="truncate">{quoteResult.distance.originAddress}</span>
-              <ArrowRight className="h-3 w-3 shrink-0 text-accent" />
-              <span className="truncate">{quoteResult.distance.destinationAddress}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-md bg-background p-3 text-center">
-                <p className="text-xs text-muted-foreground">Distance</p>
-                <p className="text-lg font-bold text-foreground">{quoteResult.distance.km} <span className="text-xs font-normal">km</span></p>
-              </div>
-              <div className="rounded-md bg-background p-3 text-center">
-                <p className="text-xs text-muted-foreground">Travel Time</p>
-                <p className="text-lg font-bold text-foreground">{quoteResult.distance.minutes} <span className="text-xs font-normal">mins</span></p>
-              </div>
-              <div className="rounded-md bg-background p-3 text-center">
-                <p className="text-xs text-muted-foreground">NTA Max Fare</p>
-                <p className="text-lg font-bold text-foreground">{"\u20AC"}{quoteResult.fare.totalFare.toFixed(2)}</p>
-              </div>
-              <div className="rounded-md bg-accent/10 p-3 text-center">
-                <p className="text-xs font-medium text-accent">Estimated Fare</p>
-                <p className="text-2xl font-bold text-accent">{"\u20AC"}{adjustedFare}</p>
-              </div>
-            </div>
-            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-              <p>NTA 2026 breakdown: Initial {"\u20AC"}{quoteResult.fare.initialCharge.toFixed(2)} + Pre-booking {"\u20AC"}{quoteResult.fare.preBookingFee.toFixed(2)} + Distance charge {"\u20AC"}{(quoteResult.fare.tariffA + quoteResult.fare.tariffB).toFixed(2)}</p>
-              {adjustedFare > quoteResult.fare.totalFare && (
-                <p className="text-accent">Minimum fare of {"\u20AC"}{minFare} applied for {selectedVehicle}.</p>
-              )}
-            </div>
-
-            {/* Submit Booking */}
-            <div className="mt-5 flex items-center gap-3 border-t border-accent/20 pt-5">
-              <button
-                type="button"
-                onClick={handleSubmitBooking}
-                disabled={bookingLoading || !customerName || (!phone && !email)}
-                className="flex items-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                {bookingLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    Book Request
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="rounded-lg border border-border bg-transparent px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Submit Button - Centered */}
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || !pickupEircode || !destinationEircode || !customerName}
+            className="flex items-center gap-2 rounded-lg bg-accent px-8 py-3.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Submitting Request...
+              </>
+            ) : (
+              "Request Fare Estimate & Availability"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

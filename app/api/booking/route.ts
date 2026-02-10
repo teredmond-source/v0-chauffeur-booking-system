@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       pickupTime,
       minFare,
       adjustedFare,
+      preferredReply,
     } = body;
 
     // Validate required fields
@@ -57,24 +58,24 @@ export async function POST(request: Request) {
       "Request ID", "Customer Name", "Phone", "Email", "General Query",
       "Pickup Eircode", "Destination Eircode", "Vehicle Type", "Date", "Time",
       "Pax", "Distance KM", "Travel Time", "NTA Max Fare", "Adjusted Fare",
-      "Status", "Timestamp", "Origin Address", "Destination Address", "Owner Fare",
+      "Status", "Timestamp", "Origin Address", "Destination Address", "Owner Fare", "Preferred Reply",
     ];
 
     // Ensure Bookings tab and headers exist
     const tabExisted = await ensureSheetTab("Bookings");
     if (!tabExisted) {
       // Tab just created - write headers
-      await updateSheetRow("Bookings!A1:T1", [headers]);
+      await updateSheetRow("Bookings!A1:U1", [headers]);
     } else {
       const existing = await getSheetData("Bookings!A1:A1");
       if (!existing || existing.length === 0 || existing[0][0] !== "Request ID") {
         // No headers - insert them
-        const allData = await getSheetData("Bookings!A1:T");
+        const allData = await getSheetData("Bookings!A1:U");
         if (!allData || allData.length === 0) {
-          await updateSheetRow("Bookings!A1:T1", [headers]);
+          await updateSheetRow("Bookings!A1:U1", [headers]);
         } else {
           const newData = [headers, ...allData];
-          await updateSheetRow(`Bookings!A1:T${newData.length}`, newData);
+          await updateSheetRow(`Bookings!A1:U${newData.length}`, newData);
         }
       }
     }
@@ -100,9 +101,10 @@ export async function POST(request: Request) {
       distance.originAddress,
       distance.destinationAddress,
       "", // Owner Fare - blank until owner sets it
+      preferredReply || "whatsapp",
     ];
 
-    await appendSheetRow("Bookings!A:T", [rowData]);
+    await appendSheetRow("Bookings!A:U", [rowData]);
 
     return NextResponse.json({
       success: true,
