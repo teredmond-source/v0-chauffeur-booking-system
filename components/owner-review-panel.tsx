@@ -372,6 +372,21 @@ export function OwnerReviewPanel() {
                       {status === "Confirmed" && (() => {
                         const replyMethod = (booking["Preferred Reply"] || "whatsapp") === "email" ? "Email" : "WhatsApp";
                         const sentTime = confirmSentTimes[uniqueKey];
+
+                        // Check if the booking date/time has passed
+                        const bookingDate = booking["Date"] || "";
+                        const bookingTime = booking["Time"] || "23:59";
+                        let jobDatePassed = false;
+                        try {
+                          const parts = bookingDate.split("/");
+                          const dateStr = parts.length === 3
+                            ? `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}T${bookingTime}:00`
+                            : `${bookingDate}T${bookingTime}:00`;
+                          jobDatePassed = new Date(dateStr) <= new Date();
+                        } catch {
+                          jobDatePassed = false;
+                        }
+
                         return (
                         <>
                           <div className="flex gap-3">
@@ -385,12 +400,7 @@ export function OwnerReviewPanel() {
                               <Send className="h-4 w-4" />
                               {sentTime ? `Sent Confirmation via ${replyMethod} on ${sentTime}` : `Send Confirmation via ${replyMethod}`}
                             </a>
-                            {status === "Completed" ? (
-                              <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white">
-                                <CheckCircle2 className="h-4 w-4" />
-                                Job Completed
-                              </div>
-                            ) : (
+                            {jobDatePassed ? (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -404,20 +414,48 @@ export function OwnerReviewPanel() {
                                 <CheckCircle2 className="h-4 w-4" />
                                 {updatingStatus === requestId ? "Updating..." : "Confirm When Job is Completed"}
                               </button>
+                            ) : (
+                              <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 cursor-not-allowed" title={`Available after ${bookingDate} ${bookingTime}`}>
+                                <Clock className="h-4 w-4" />
+                                Job Not Yet Due
+                              </div>
                             )}
                           </div>
-                          <a
-                            href={`/dispatch/${requestId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-                          >
-                            <Navigation className="h-4 w-4" />
-                            Driver Dispatch Link
-                          </a>
+                          <div className="flex gap-3">
+                            <a
+                              href={`/dispatch/${requestId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                            >
+                              <Navigation className="h-4 w-4" />
+                              Driver Dispatch Link
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to cancel this confirmed booking?")) {
+                                  handleStatusUpdate(requestId, "Cancelled", uniqueKey);
+                                  window.open(generateCancelMessage(booking), "_blank");
+                                }
+                              }}
+                              disabled={updatingStatus === requestId}
+                              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-300 bg-transparent px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              Cancel Booking
+                            </button>
+                          </div>
                         </>
                         );
                       })()}
+
+                      {status === "Completed" && (
+                        <div className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Job Completed
+                        </div>
+                      )}
 
                       {(status === "Requested" || status === "Quoted") && (
                         <button
