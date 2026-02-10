@@ -170,7 +170,7 @@ export function OwnerReviewPanel() {
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-card p-6">
-        <h3 className="mb-4 text-lg font-semibold text-foreground">Client Requests</h3>
+        <h3 className="mb-4 text-lg font-semibold text-foreground">Client Requests Dashboard</h3>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           <span className="ml-2 text-sm text-muted-foreground">Loading bookings...</span>
@@ -183,7 +183,7 @@ export function OwnerReviewPanel() {
     <div className="rounded-xl border border-border bg-card p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-foreground">
-          Client Requests
+          Client Requests Dashboard
           <span className="ml-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-accent/10 px-2 text-xs font-bold text-accent">
             {filteredBookings.length}
           </span>
