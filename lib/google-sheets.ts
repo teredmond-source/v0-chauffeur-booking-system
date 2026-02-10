@@ -87,10 +87,12 @@ const BOOKING_HEADERS = [
   "Pickup Eircode", "Destination Eircode", "Vehicle Type", "Date", "Time",
   "Pax", "Distance KM", "Travel Time", "NTA Max Fare", "Adjusted Fare",
   "Status", "Timestamp", "Origin Address", "Destination Address", "Owner Fare", "Preferred Reply",
+  "Journey Status", "Driver Name", "Vehicle Reg", "Pickup Timestamp",
+  "Completion Timestamp", "Actual KM Driven", "Actual Duration", "Driver Lat", "Driver Lng",
 ];
 
 export async function getBookings() {
-  const data = await getSheetData("Bookings!A1:U");
+  const data = await getSheetData("Bookings!A1:AD");
   if (!data || data.length === 0) return [];
 
   // Check if first row is headers

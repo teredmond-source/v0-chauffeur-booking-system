@@ -12,6 +12,15 @@ const COL_MAP: Record<string, string> = {
   "Owner Fare": "T",
   "Status": "P",
   "Preferred Reply": "U",
+  "Journey Status": "V",
+  "Driver Name": "W",
+  "Vehicle Reg": "X",
+  "Pickup Timestamp": "Y",
+  "Completion Timestamp": "Z",
+  "Actual KM Driven": "AA",
+  "Actual Duration": "AB",
+  "Driver Lat": "AC",
+  "Driver Lng": "AD",
 };
 
 export async function POST(request: Request) {
