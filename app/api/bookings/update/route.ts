@@ -11,7 +11,7 @@ import { getBookings, updateSheetCell } from "../../../../lib/google-sheets";
 const COL_MAP: Record<string, string> = {
   "Owner Fare": "T",
   "Status": "P",
-  "Assigned Driver": "U",
+  "Preferred Reply": "U",
 };
 
 export async function POST(request: Request) {

@@ -219,17 +219,18 @@ export function OwnerReviewPanel() {
         <div className="space-y-2">
           {filteredBookings.map((booking) => {
             const requestId = booking["Request ID"];
-            const isExpanded = expandedBooking === requestId;
+            const uniqueKey = booking["_rowIndex"] || requestId;
+            const isExpanded = expandedBooking === uniqueKey;
             const status = booking["Status"] || "Requested";
             const ownerFare = booking["Owner Fare"] || "";
             const displayFare = ownerFare || booking["Adjusted Fare"] || booking["NTA Max Fare"] || "0";
 
             return (
-              <div key={requestId} className="rounded-lg border border-border bg-secondary/20">
+              <div key={uniqueKey} className="rounded-lg border border-border bg-secondary/20">
                 <button
                   type="button"
                   className="flex w-full items-center justify-between px-4 py-3 text-left"
-                  onClick={() => setExpandedBooking(isExpanded ? null : requestId)}
+                  onClick={() => setExpandedBooking(isExpanded ? null : uniqueKey)}
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-xs font-bold text-accent">{requestId}</span>
