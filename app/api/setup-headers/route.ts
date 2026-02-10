@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSheetData, updateSheetRow } from "../../../lib/google-sheets";
+import { getSheetData, updateSheetRow, ensureSheetTab } from "../../../lib/google-sheets";
 
 const HEADERS = [
   "Request ID", "Customer Name", "Phone", "Email", "General Query",
@@ -10,35 +10,52 @@ const HEADERS = [
 
 export async function POST() {
   try {
-    // Check if headers exist
-    const existing = await getSheetData("Bookings!A1:T1");
+    // Step 1: Ensure "Bookings" tab exists
+    const tabExisted = await ensureSheetTab("Bookings");
+    console.log("[v0] Bookings tab existed:", tabExisted);
+
+    if (!tabExisted) {
+      // Tab was just created - write headers to empty sheet
+      await updateSheetRow("Bookings!A1:T1", [HEADERS]);
+      return NextResponse.json({ message: "Created Bookings tab and wrote headers", headers: HEADERS });
+    }
+
+    // Step 2: Check if row 1 already has correct headers
+    let existing: string[][] = [];
+    try {
+      existing = await getSheetData("Bookings!A1:T1");
+    } catch {
+      // Sheet might be empty
+    }
+
     if (existing && existing.length > 0 && existing[0][0] === "Request ID") {
       return NextResponse.json({ message: "Headers already exist", headers: existing[0] });
     }
 
-    // If row 1 has data but wrong headers, we need to insert headers
-    // First check if there's any data at all
-    const allData = await getSheetData("Bookings!A1:T");
-    
-    if (!allData || allData.length === 0) {
-      // Empty sheet - just write headers
-      await updateSheetRow("Bookings!A1:T1", [HEADERS]);
-      return NextResponse.json({ message: "Headers written to empty sheet", headers: HEADERS });
+    // Step 3: Row 1 exists but is data, not headers - shift everything down
+    let allData: string[][] = [];
+    try {
+      allData = await getSheetData("Bookings!A1:T");
+    } catch {
+      // Empty
     }
 
-    // There's data but no proper headers - the first row is data, not headers
-    // We need to shift all data down by 1 row and insert headers at row 1
-    // Google Sheets API doesn't have an "insert row" - we need to rewrite
+    if (!allData || allData.length === 0) {
+      await updateSheetRow("Bookings!A1:T1", [HEADERS]);
+      return NextResponse.json({ message: "Headers written to empty Bookings tab", headers: HEADERS });
+    }
+
+    // Prepend headers and rewrite
     const newData = [HEADERS, ...allData];
     await updateSheetRow(`Bookings!A1:T${newData.length}`, newData);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: `Headers inserted. ${allData.length} existing rows shifted down.`,
       headers: HEADERS,
       existingRows: allData.length,
     });
   } catch (error) {
-    console.error("Error setting up headers:", error);
+    console.error("[v0] Error setting up headers:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to set up headers" },
       { status: 500 }

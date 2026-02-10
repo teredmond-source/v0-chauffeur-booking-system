@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { calculateDistance } from "../../../lib/google-maps";
 import { calculateNTAFare } from "../../../lib/pricing";
-import { appendSheetRow } from "../../../lib/google-sheets";
+import { appendSheetRow, ensureSheetTab, getSheetData, updateSheetRow } from "../../../lib/google-sheets";
 
 // Generate a Request ID like RD-1001
 let requestCounter = 1000;
@@ -60,15 +60,23 @@ export async function POST(request: Request) {
       "Status", "Timestamp", "Origin Address", "Destination Address", "Owner Fare",
     ];
 
-    try {
-      const { getSheetData } = await import("../../../lib/google-sheets");
-      const existing = await getSheetData("Bookings!A1:A2");
-      if (!existing || existing.length === 0) {
-        // Sheet is empty - write headers first
-        await appendSheetRow("Bookings!A:T", [headers]);
+    // Ensure Bookings tab and headers exist
+    const tabExisted = await ensureSheetTab("Bookings");
+    if (!tabExisted) {
+      // Tab just created - write headers
+      await updateSheetRow("Bookings!A1:T1", [headers]);
+    } else {
+      const existing = await getSheetData("Bookings!A1:A1");
+      if (!existing || existing.length === 0 || existing[0][0] !== "Request ID") {
+        // No headers - insert them
+        const allData = await getSheetData("Bookings!A1:T");
+        if (!allData || allData.length === 0) {
+          await updateSheetRow("Bookings!A1:T1", [headers]);
+        } else {
+          const newData = [headers, ...allData];
+          await updateSheetRow(`Bookings!A1:T${newData.length}`, newData);
+        }
       }
-    } catch {
-      // If we can't check, try to write headers anyway (append won't duplicate if data exists)
     }
 
     const rowData = [

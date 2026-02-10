@@ -57,6 +57,31 @@ export async function updateSheetRow(range: string, values: string[][]) {
   return response.data;
 }
 
+export async function ensureSheetTab(tabName: string) {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  // Check if tab exists
+  const spreadsheet = await sheets.spreadsheets.get({
+    spreadsheetId: getSheetId(),
+  });
+  const existingTabs = spreadsheet.data.sheets?.map(s => s.properties?.title) || [];
+  if (!existingTabs.includes(tabName)) {
+    // Create the tab
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: getSheetId(),
+      requestBody: {
+        requests: [{
+          addSheet: {
+            properties: { title: tabName },
+          },
+        }],
+      },
+    });
+    return false; // tab was created (didn't exist)
+  }
+  return true; // tab already existed
+}
+
 export async function getBookings() {
   const data = await getSheetData("Bookings!A1:Z");
   if (data.length < 2) return [];
