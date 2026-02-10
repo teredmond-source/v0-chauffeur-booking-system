@@ -3,9 +3,12 @@ import { calculateDistance } from "../../../lib/google-maps";
 import { calculateNTAFare } from "../../../lib/pricing";
 import { appendSheetRow, ensureSheetTab, getSheetData, updateSheetRow } from "../../../lib/google-sheets";
 
+// Booking submission handler v2 - generates unique sequential Request IDs
 export async function POST(request: Request) {
+  console.log("[v0] Booking POST handler v2 called");
   try {
     const body = await request.json();
+    console.log("[v0] Booking request body:", JSON.stringify({ customerName: body.customerName, vehicleType: body.vehicleType }));
     const {
       customerName,
       phone,
