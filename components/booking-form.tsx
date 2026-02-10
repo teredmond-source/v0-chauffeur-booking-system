@@ -263,40 +263,6 @@ export function BookingForm() {
           </div>
         </div>
 
-        {/* Preferred Reply Method */}
-        <div>
-          <h4 className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
-            <MessageCircle className="h-4 w-4 text-accent" />
-            How would you like us to reply?
-          </h4>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setPreferredReply("whatsapp")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
-                preferredReply === "whatsapp"
-                  ? "border-green-500 bg-green-50 text-green-700"
-                  : "border-border bg-background text-muted-foreground hover:border-green-300 hover:bg-green-50/50"
-              }`}
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreferredReply("email")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
-                preferredReply === "email"
-                  ? "border-accent bg-accent/5 text-accent"
-                  : "border-border bg-background text-muted-foreground hover:border-accent/40 hover:bg-accent/5"
-              }`}
-            >
-              <Mail className="h-4 w-4" />
-              Email
-            </button>
-          </div>
-        </div>
-
         {/* General Query */}
         <div>
           <label htmlFor="generalQuery" className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -458,13 +424,47 @@ export function BookingForm() {
           </div>
         </div>
 
-        {/* Submit Button - Centered */}
-        <div className="flex justify-center pt-2">
+        {/* Preferred Reply Method */}
+        <div>
+          <h4 className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+            <MessageCircle className="h-4 w-4 text-accent" />
+            How would you like us to reply?
+          </h4>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setPreferredReply("whatsapp")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                preferredReply === "whatsapp"
+                  ? "border-green-500 bg-green-50 text-green-700"
+                  : "border-border bg-background text-muted-foreground hover:border-green-300 hover:bg-green-50/50"
+              }`}
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreferredReply("email")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                preferredReply === "email"
+                  ? "border-accent bg-accent/5 text-accent"
+                  : "border-border bg-background text-muted-foreground hover:border-accent/40 hover:bg-accent/5"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </button>
+          </div>
+        </div>
+
+        {/* Submit Button - Centered with 3D effect */}
+        <div className="flex justify-center pt-4">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={submitting || !pickupEircode || !destinationEircode || !customerName}
-            className="flex items-center gap-2 rounded-lg bg-accent px-8 py-3.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-accent px-10 py-4 text-sm font-bold text-accent-foreground shadow-[0_6px_0_0_rgba(0,0,0,0.25)] transition-all hover:shadow-[0_4px_0_0_rgba(0,0,0,0.25)] hover:translate-y-[2px] active:shadow-[0_1px_0_0_rgba(0,0,0,0.25)] active:translate-y-[5px] disabled:opacity-50 disabled:shadow-[0_6px_0_0_rgba(0,0,0,0.1)] disabled:translate-y-0"
           >
             {submitting ? (
               <>
