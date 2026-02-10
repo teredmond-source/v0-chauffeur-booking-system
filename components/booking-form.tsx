@@ -114,28 +114,34 @@ export function BookingForm() {
     setSubmitting(true);
     setError(null);
     try {
+      console.log("[v0] Submitting booking request...", { customerName, pickupEircode, destinationEircode, selectedVehicle });
+      const payload = {
+        customerName,
+        phone,
+        email,
+        generalQuery,
+        pickupEircode,
+        destinationEircode,
+        vehicleType: selectedVehicle,
+        passengers,
+        pickupDate,
+        pickupTime,
+        minFare,
+        preferredReply,
+      };
+      console.log("[v0] Payload:", JSON.stringify(payload));
       const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerName,
-          phone,
-          email,
-          generalQuery,
-          pickupEircode,
-          destinationEircode,
-          vehicleType: selectedVehicle,
-          passengers,
-          pickupDate,
-          pickupTime,
-          minFare,
-          preferredReply,
-        }),
+        body: JSON.stringify(payload),
       });
+      console.log("[v0] Response status:", res.status);
       const data = await res.json();
+      console.log("[v0] Response data:", JSON.stringify(data).slice(0, 500));
       if (!res.ok) throw new Error(data.error || "Failed to submit request");
       setBookingId(data.bookingId);
     } catch (err) {
+      console.log("[v0] Submit error:", err instanceof Error ? err.message : String(err));
       setError(err instanceof Error ? err.message : "Failed to submit request");
     } finally {
       setSubmitting(false);
