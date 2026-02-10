@@ -68,10 +68,12 @@ export function OwnerReviewPanel() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      // Update local state
+      // Update local state using rowIndex for unique matching
       setBookings((prev) =>
         prev.map((b) =>
-          b["Request ID"] === requestId ? { ...b, "Owner Fare": fare } : b
+          (rowIndex && b["_rowIndex"] === rowIndex) || b["Request ID"] === requestId
+            ? { ...b, "Owner Fare": fare }
+            : b
         )
       );
     } catch (err) {
@@ -107,7 +109,7 @@ export function OwnerReviewPanel() {
     const phone = booking["Phone"]?.replace(/\s/g, "").replace(/^0/, "353");
     const name = booking["Customer Name"] || "there";
     const requestId = booking["Request ID"];
-    const fare = booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"];
+    const fare = fareOverrides[requestId] || booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"];
     const vehicle = booking["Vehicle Type"] || "";
     const from = booking["Origin Address"] || booking["Pickup Eircode"] || "";
     const to = booking["Destination Address"] || booking["Destination Eircode"] || "";
@@ -136,7 +138,7 @@ export function OwnerReviewPanel() {
     const phone = booking["Phone"]?.replace(/\s/g, "").replace(/^0/, "353");
     const name = booking["Customer Name"] || "there";
     const requestId = booking["Request ID"];
-    const fare = booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"];
+    const fare = fareOverrides[requestId] || booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"];
     const vehicle = booking["Vehicle Type"] || "";
     const driver = booking["Assigned Driver"] || "your assigned driver";
     const from = booking["Origin Address"] || booking["Pickup Eircode"] || "";
@@ -347,7 +349,14 @@ export function OwnerReviewPanel() {
                           href={generateWhatsAppLink(booking)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => handleStatusUpdate(requestId, "Quoted", uniqueKey)}
+                          onClick={() => {
+                            // Save the manual fare to the sheet before sending
+                            const manualFare = fareOverrides[requestId];
+                            if (manualFare) {
+                              handleSaveFare(requestId, uniqueKey);
+                            }
+                            handleStatusUpdate(requestId, "Quoted", uniqueKey);
+                          }}
                           className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
                         >
                           <MessageCircle className="h-4 w-4" />
