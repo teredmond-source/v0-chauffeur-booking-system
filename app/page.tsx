@@ -411,12 +411,14 @@ export default function Home() {
 
         {/* All Booking Requests - Full Width */}
         <div className="mb-8 rounded-xl border border-border bg-card">
-          <button
-            type="button"
-            onClick={() => setBookingsExpanded(!bookingsExpanded)}
-            className="flex w-full items-center justify-between px-5 py-4"
-          >
-            <div className="flex items-center gap-3">
+          <div className="flex w-full items-center justify-between px-5 py-4">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setBookingsExpanded(!bookingsExpanded)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setBookingsExpanded(!bookingsExpanded); }}
+              className="flex cursor-pointer items-center gap-3"
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
                 <CalendarCheck className="h-5 w-5 text-accent" />
               </div>
@@ -426,18 +428,16 @@ export default function Home() {
                 </p>
                 <p className="text-xs text-muted-foreground">All Booking Requests</p>
               </div>
+              {bookingsExpanded ? <ChevronUp className="ml-2 h-5 w-5 text-muted-foreground" /> : <ChevronDown className="ml-2 h-5 w-5 text-muted-foreground" />}
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); fetchBookings(); }}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
-              >
-                <RefreshCw className="h-3 w-3" /> Refresh
-              </button>
-              {bookingsExpanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-            </div>
-          </button>
+            <button
+              type="button"
+              onClick={() => fetchBookings()}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <RefreshCw className="h-3 w-3" /> Refresh
+            </button>
+          </div>
           {bookingsExpanded && (
             <div className="border-t border-border px-5 pb-5">
               {bookingsLoading ? (
