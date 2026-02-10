@@ -18,7 +18,7 @@ export async function calculateDistance(
   const origin = encodeURIComponent(`Ireland, ${pickupEircode}`);
   const destination = encodeURIComponent(`Ireland, ${destinationEircode}`);
 
-  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin}&destinations=${destination}&mode=driving&units=metric&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin}&destinations=${destination}&mode=driving&units=metric&region=ie&key=${apiKey}`;
 
   const response = await fetch(url);
   const data = await response.json();
