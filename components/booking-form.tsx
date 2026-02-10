@@ -130,7 +130,7 @@ export function BookingForm() {
         preferredReply,
       };
       console.log("[v0] Payload:", JSON.stringify(payload));
-      const res = await fetch("/api/booking", {
+      const res = await fetch("/api/submit-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
