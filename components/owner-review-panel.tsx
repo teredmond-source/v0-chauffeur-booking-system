@@ -379,7 +379,7 @@ export function OwnerReviewPanel() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => setConfirmSentTimes((prev) => ({ ...prev, [uniqueKey]: new Date().toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" }) }))}
-                            className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
+                            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white ${sentTime ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
                           >
                             <Send className="h-4 w-4" />
                             {sentTime ? `Sent Confirmation via ${replyMethod} on ${sentTime}` : `Send Confirmation via ${replyMethod}`}
