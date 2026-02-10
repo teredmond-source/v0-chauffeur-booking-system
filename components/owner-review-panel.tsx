@@ -373,20 +373,6 @@ export function OwnerReviewPanel() {
                         const replyMethod = (booking["Preferred Reply"] || "whatsapp") === "email" ? "Email" : "WhatsApp";
                         const sentTime = confirmSentTimes[uniqueKey];
 
-                        // Check if the booking date/time has passed
-                        const bookingDate = booking["Date"] || "";
-                        const bookingTime = booking["Time"] || "23:59";
-                        let jobDatePassed = false;
-                        try {
-                          const parts = bookingDate.split("/");
-                          const dateStr = parts.length === 3
-                            ? `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}T${bookingTime}:00`
-                            : `${bookingDate}T${bookingTime}:00`;
-                          jobDatePassed = new Date(dateStr) <= new Date();
-                        } catch {
-                          jobDatePassed = false;
-                        }
-
                         return (
                         <>
                           {/* Client Actions */}
@@ -417,54 +403,12 @@ export function OwnerReviewPanel() {
                             </button>
                           </div>
 
-                          {/* Job Management - Separate Section */}
-                          <div className="mt-2 rounded-lg border border-border bg-secondary/30 p-3">
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Job Management</p>
-                            <div className="flex gap-3">
-                              <a
-                                href={`/dispatch/${requestId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-                              >
-                                <Navigation className="h-4 w-4" />
-                                Driver Dispatch Link
-                              </a>
-                              {jobDatePassed ? (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (window.confirm("Has this job been completed? This action cannot be undone.")) {
-                                      handleStatusUpdate(requestId, "Completed", uniqueKey);
-                                    }
-                                  }}
-                                  disabled={updatingStatus === requestId}
-                                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                                >
-                                  <CheckCircle2 className="h-4 w-4" />
-                                  {updatingStatus === requestId ? "Updating..." : "Confirm When Job is Completed"}
-                                </button>
-                              ) : (
-                                <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 cursor-not-allowed" title={`Available after ${bookingDate} ${bookingTime}`}>
-                                  <Clock className="h-4 w-4" />
-                                  Job Not Yet Due
-                                </div>
-                              )}
-                            </div>
-                          </div>
+
                         </>
                         );
                       })()}
 
-                      {status === "Completed" && (
-                        <div className="rounded-lg border border-border bg-secondary/30 p-3">
-                          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Job Management</p>
-                          <div className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Job Completed
-                          </div>
-                        </div>
-                      )}
+
 
                       {(status === "Requested" || status === "Quoted") && (
                         <button

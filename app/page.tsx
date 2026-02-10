@@ -6,6 +6,7 @@ import { BookingForm } from "@/components/booking-form";
 import { StatCard } from "@/components/stat-card";
 import { NTAInfoPanel } from "@/components/nta-info-panel";
 import { OwnerReviewPanel } from "@/components/owner-review-panel";
+import { DispatchDashboard } from "@/components/dispatch-dashboard";
 import {
   Users, Car, Calendar, CalendarCheck, TrendingUp,
   RefreshCw, ChevronDown, ChevronUp, Loader2,
@@ -517,6 +518,10 @@ export default function Home() {
 
         <div>
           <OwnerReviewPanel />
+        </div>
+
+        <div className="mt-8">
+          <DispatchDashboard />
         </div>
       </main>
 
