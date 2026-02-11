@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AppHeader } from "@/components/app-header";
 import { BookingForm } from "@/components/booking-form";
-import { NTAInfoPanel } from "@/components/nta-info-panel";
+
 import { OwnerReviewPanel } from "@/components/owner-review-panel";
 import { DispatchDashboard } from "@/components/dispatch-dashboard";
 import { DriverFleetDashboard } from "@/components/driver-fleet-dashboard";
