@@ -12,7 +12,7 @@ export async function POST() {
   try {
     // Step 1: Ensure "Bookings" tab exists
     const tabExisted = await ensureSheetTab("Bookings");
-    console.log("[v0] Bookings tab existed:", tabExisted);
+
 
     if (!tabExisted) {
       // Tab was just created - write headers to empty sheet
