@@ -48,7 +48,7 @@ export default function Home() {
           <p className="mt-1 text-sm text-muted-foreground">Create bookings, calculate fares, and manage dispatch.</p>
         </div>
 
-        {/* All Booking Requests - Full Width */}
+        {/* All Booking Requests */}
         <div className="mb-8 rounded-xl border border-border bg-card">
           <div className="flex w-full items-center justify-between px-5 py-4">
             <div
