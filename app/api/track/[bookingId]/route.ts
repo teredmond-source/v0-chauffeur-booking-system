@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBookings } from "../../../../lib/google-sheets";
+import { getBookings } from "@/lib/google-sheets";
 
 export async function GET(
   _request: Request,

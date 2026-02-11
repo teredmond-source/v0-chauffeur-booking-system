@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBookings, updateSheetCell } from "../../../../lib/google-sheets";
+import { getBookings, updateSheetCell } from "@/lib/google-sheets";
 
 const COL_MAP: Record<string, string> = {
   "Status": "P",
