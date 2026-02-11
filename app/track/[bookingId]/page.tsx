@@ -104,7 +104,7 @@ export default function TrackingPage() {
               We would love to hear your feedback. Your review helps us provide the best service.
             </p>
             <a
-              href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
+              href="https://g.page/r/CdsSZeCTlq7_EBM/review"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"

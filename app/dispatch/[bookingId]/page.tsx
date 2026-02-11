@@ -194,7 +194,7 @@ export default function DriverDispatchPage() {
     if (booking) {
       const phone = booking["Phone"]?.replace(/\s/g, "").replace(/^0/, "353") || "";
       const clientName = booking["Customer Name"] || "there";
-      const reviewUrl = "https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review";
+      const reviewUrl = "https://g.page/r/CdsSZeCTlq7_EBM/review";
       const message = `Hi ${clientName},\n\nThank you for traveling with Redmond Chauffeur Drive. We hope you had an excellent journey.\n\nIf you have a moment, we would really appreciate a Google review. It helps us continue to provide the best service:\n${reviewUrl}\n\nWe look forward to welcoming you again.\n\nRedmond Chauffeur Drive`;
       const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
       window.open(waUrl, "_blank");
