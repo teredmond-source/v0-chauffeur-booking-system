@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, Loader2, Car, MapPin, Calendar, Clock } from "lucide-react";
 
