@@ -18,23 +18,6 @@ export const metadata: Metadata = {
   title: "Redmond Chauffeur Drive - Booking & Dispatch",
   description:
     "Professional chauffeur booking and dispatch system for Redmond Chauffeur Drive. Executive transport services across Ireland.",
-  icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
-  },
 };
 
 export const viewport: Viewport = {
@@ -49,8 +32,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body className="font-sans antialiased">
+    <html lang="en">
+      <head>
+        <link rel="apple-touch-icon" href="/rcd-icon-192.jpg" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="RCD Driver" />
+      </head>
+      <body suppressHydrationWarning className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         {children}
         <Toaster richColors position="top-right" />
         <Analytics />

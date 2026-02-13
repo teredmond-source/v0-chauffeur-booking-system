@@ -197,14 +197,19 @@ export async function getBookings() {
   const dataRows = hasHeaders ? data.slice(1) : data;
   const startRow = hasHeaders ? 2 : 1;
 
-  return dataRows.map((row: string[], rowIndex: number) => {
-    const obj: Record<string, string> = {};
-    BOOKING_HEADERS.forEach((h: string, i: number) => {
-      obj[h] = row[i] || "";
+  return dataRows
+    .map((row: string[], rowIndex: number) => {
+      const obj: Record<string, string> = {};
+      BOOKING_HEADERS.forEach((h: string, i: number) => {
+        obj[h] = row[i] || "";
+      });
+      obj["_rowIndex"] = String(rowIndex + startRow);
+      return obj;
+    })
+    .filter((obj) => {
+      // Filter out completely empty rows (no Request ID, no Customer Name, no meaningful data)
+      return obj["Request ID"] || obj["Customer Name"] || obj["Phone"] || obj["Origin Eircode"];
     });
-    obj["_rowIndex"] = String(rowIndex + startRow);
-    return obj;
-  });
 }
 
 export async function getDrivers() {

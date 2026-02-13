@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Users, Car, Calendar, RefreshCw, ChevronDown, ChevronUp, Loader2,
-  Truck,
+  Truck, Phone,
 } from "lucide-react";
 
 interface SheetRecord {
@@ -28,11 +28,11 @@ function toDirectImageUrl(url: string, size?: number): string {
   if (!url) return "";
   const fileId = extractDriveFileId(url);
   if (fileId) {
-    const sizeParam = size ? `=s${size}-c` : "";
+    const sizeParam = size ? `=s${size}` : "";
     return `https://lh3.googleusercontent.com/d/${fileId}${sizeParam}`;
   }
   if (url.includes("lh3.googleusercontent.com") && size) {
-    return url.replace(/=s\d+.*$/, "") + `=s${size}-c`;
+    return url.replace(/=s\d+.*$/, "") + `=s${size}`;
   }
   return url;
 }
@@ -112,7 +112,7 @@ export function DriverFleetDashboard() {
   return (
     <div className="rounded-xl border border-border bg-card">
       {/* Header */}
-      <div className="flex w-full items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div
           role="button"
           tabIndex={0}
@@ -120,31 +120,32 @@ export function DriverFleetDashboard() {
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded(!expanded); }}
           className="flex cursor-pointer items-center gap-3"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-            <Truck className="h-5 w-5 text-accent" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+            <Users className="h-4 w-4 text-accent-foreground" />
           </div>
-          <div className="text-left">
-            <p className="text-lg font-bold text-foreground">Driver & Fleet Dashboard</p>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Driver & Fleet Dashboard</h3>
             <p className="text-xs text-muted-foreground">
-              {driversLoading ? "..." : `${drivers.length} Active Drivers`} {" / "}
+              {driversLoading ? "..." : `${drivers.length} Active Drivers`}{" / "}
               {vehiclesLoading ? "..." : `${vehicles.length} Fleet Vehicles`}
             </p>
           </div>
-          {expanded ? <ChevronUp className="ml-2 h-5 w-5 text-muted-foreground" /> : <ChevronDown className="ml-2 h-5 w-5 text-muted-foreground" />}
+          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </div>
         <button
           type="button"
           onClick={() => { fetchDrivers(); fetchVehicles(); }}
           className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
-          <RefreshCw className="h-3 w-3" /> Refresh
+          <RefreshCw className="h-3 w-3" />
+          Refresh
         </button>
       </div>
 
       {expanded && (
-        <div className="border-t border-border px-5 pb-5">
+        <div className="p-4">
           {/* Tabs */}
-          <div className="mt-4 flex gap-2">
+          <div className="mb-4 flex gap-2">
             <button
               type="button"
               onClick={() => setActiveTab("drivers")}
@@ -156,7 +157,7 @@ export function DriverFleetDashboard() {
             >
               <Users className="h-4 w-4" />
               Active Drivers
-              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-background/50 px-1 text-xs font-bold">
+              <span className="rounded-full bg-background px-2 py-0.5 text-xs">
                 {driversLoading ? "..." : drivers.length}
               </span>
             </button>
@@ -171,7 +172,7 @@ export function DriverFleetDashboard() {
             >
               <Car className="h-4 w-4" />
               Fleet Vehicles
-              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-background/50 px-1 text-xs font-bold">
+              <span className="rounded-full bg-background px-2 py-0.5 text-xs">
                 {vehiclesLoading ? "..." : vehicles.length}
               </span>
             </button>
@@ -179,18 +180,18 @@ export function DriverFleetDashboard() {
 
           {/* Drivers Tab */}
           {activeTab === "drivers" && (
-            <div className="mt-4">
+            <div>
               {driversLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-sm text-muted-foreground">Loading drivers...</span>
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading drivers...
                 </div>
               ) : driversError ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                  <p className="text-xs text-destructive">{driversError}</p>
+                <div className="py-8 text-center">
+                  <p className="text-sm text-destructive">{driversError}</p>
                 </div>
               ) : drivers.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">No drivers found.</p>
+                <p className="py-8 text-center text-sm text-muted-foreground">No drivers found.</p>
               ) : (
                 <div className="space-y-2">
                   {drivers.map((driver, idx) => {
@@ -200,50 +201,91 @@ export function DriverFleetDashboard() {
                     const name = (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || Object.values(driver)[0]) || "Unknown";
                     const status = driver["Current Status"] || "";
                     const ntaId = driver["NTA Driver ID"] || "";
+                    const rawPhone = driver["Phone"] || driver["phone"] || driver["Mobile"] || driver["mobile"] || driver["Contact"] || driver["contact"] || driver["Phone Number"] || driver["phone number"] || driver["Tel"] || driver["tel"] || "";
+                    // Fix missing leading 0 (Google Sheets strips it from numbers)
+                    const phone = rawPhone && !rawPhone.startsWith("0") && !rawPhone.startsWith("+") && !rawPhone.startsWith("00")
+                      ? `0${rawPhone}` : rawPhone;
                     const availableFrom = driver["Available From"] || "";
                     const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status.toLowerCase() === "on duty" || status === "";
                     const allKeys = Object.keys(driver);
                     return (
-                      <div key={idx} className="rounded-lg border border-border bg-secondary/30 hover:bg-secondary/60">
-                        <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
+                      <div key={idx} className="rounded-lg border border-border bg-background">
+                        <button type="button" className="flex w-full items-center justify-between px-4 py-3 text-left" onClick={() => setExpandedDriver(isExpanded ? null : idx)}>
                           <div className="flex items-center gap-3">
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{name}</p>
-                              <div className="flex items-center gap-2">
-                                {status && (
-                                  <span className={`inline-flex items-center gap-1 text-xs ${isActive ? "text-green-600" : "text-muted-foreground"}`}>
-                                    <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-green-500" : "bg-muted-foreground/50"}`} />
-                                    {status}
-                                  </span>
-                                )}
-                                {ntaId && <span className="text-xs text-muted-foreground">NTA: {ntaId}</span>}
-                              </div>
+                            <div className={`h-2 w-2 rounded-full ${isActive ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                            <span className="text-sm font-medium text-foreground">{name}</span>
+                            <div className="flex items-center gap-2">
+                              {status && (
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${isActive ? "bg-green-400/10 text-green-400" : "bg-muted text-muted-foreground"}`}>
+                                  {status}
+                                </span>
+                              )}
+                              {ntaId && <span className="text-xs text-muted-foreground">NTA: {ntaId}</span>}
+                              {phone && (
+                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Phone className="h-3 w-3" />
+                                  {phone}
+                                </span>
+                              )}
                             </div>
                           </div>
-                          {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                          <div className="text-muted-foreground">
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </div>
                         </button>
                         {isExpanded && (
-                          <div className="border-t border-border px-3 pb-3 pt-2">
-                            <div className="grid grid-cols-1 gap-1.5">
-                              {allKeys.map((key) => {
+                          <div className="border-t border-border px-4 py-3">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {/* Render images first, larger and clickable */}
+                              {allKeys.filter((key) => {
                                 const val = driver[key];
-                                if (!val) return null;
-                                const isUrl = val.startsWith("http://") || val.startsWith("https://");
-                                const isImg = isUrl && isImageColumn(key, val);
-                                if (isImg) {
-                                  const directUrl = toDirectImageUrl(val);
-                                  return (
-                                    <div key={key} className="text-xs">
-                                      <span className="font-medium text-muted-foreground">{key}:</span>
-                                      <img src={directUrl || "/placeholder.svg"} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                                    </div>
-                                  );
-                                }
+                                return val && (val.startsWith("http://") || val.startsWith("https://")) && isImageColumn(key, val);
+                              }).map((key) => {
+                                const val = driver[key];
+                                const directUrl = toDirectImageUrl(val, 800);
                                 return (
-                                  <div key={key} className="flex items-start gap-2 text-xs">
-                                    <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
+                                  <div key={key} className="col-span-2 mb-3">
+                                    <span className="mb-2 block text-xs font-semibold text-muted-foreground">{key}</span>
+                                    <a href={directUrl || val} target="_blank" rel="noopener noreferrer" className="inline-block">
+                                      <img
+                                        src={directUrl || "/placeholder.svg"}
+                                        alt={key}
+                                        className="rounded-lg border border-border"
+                                        style={{ maxWidth: "100%", height: "auto", display: "block" }}
+                                        onError={(e) => {
+                                          const img = e.target as HTMLImageElement;
+                                          if (img.src !== val) {
+                                            img.src = val;
+                                          } else {
+                                            img.style.display = "none";
+                                          }
+                                        }}
+                                      />
+                                    </a>
+                                    <span className="mt-1 block text-[10px] text-muted-foreground/60">Click image to view full size</span>
+                                  </div>
+                                );
+                              })}
+                              {/* Render non-image fields */}
+                              {allKeys.filter((key) => {
+                                const val = driver[key];
+                                if (!val) return false;
+                                const isUrl = val.startsWith("http://") || val.startsWith("https://");
+                                return !(isUrl && isImageColumn(key, val));
+                              }).map((key) => {
+                                let val = driver[key];
+                                if (!val) return null;
+                                // Fix missing leading 0 on phone numbers
+                                const isPhoneField = /phone|mobile|contact|tel/i.test(key);
+                                if (isPhoneField && val && !val.startsWith("0") && !val.startsWith("+") && !val.startsWith("00")) {
+                                  val = `0${val}`;
+                                }
+                                const isUrl = val.startsWith("http://") || val.startsWith("https://");
+                                return (
+                                  <div key={key}>
+                                    <span className="font-medium text-muted-foreground">{key}: </span>
                                     {isUrl ? (
-                                      <a href={val} target="_blank" rel="noopener noreferrer" className="text-accent underline truncate max-w-[200px]">{val}</a>
+                                      <a href={val} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">{val}</a>
                                     ) : (
                                       <span className="text-foreground">{val}</span>
                                     )}
@@ -252,9 +294,9 @@ export function DriverFleetDashboard() {
                               })}
                             </div>
                             {availableFrom && (
-                              <div className="mt-2 flex items-center gap-1.5 rounded-md bg-accent/10 px-2 py-1 text-xs">
-                                <Calendar className="h-3 w-3 text-accent" />
-                                <span className="text-muted-foreground">Available from:</span>
+                              <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                <span>Available from: </span>
                                 <span className="font-medium text-foreground">{availableFrom}</span>
                               </div>
                             )}
@@ -270,18 +312,18 @@ export function DriverFleetDashboard() {
 
           {/* Vehicles Tab */}
           {activeTab === "vehicles" && (
-            <div className="mt-4">
+            <div>
               {vehiclesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-sm text-muted-foreground">Loading vehicles...</span>
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading vehicles...
                 </div>
               ) : vehiclesError ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                  <p className="text-xs text-destructive">{vehiclesError}</p>
+                <div className="py-8 text-center">
+                  <p className="text-sm text-destructive">{vehiclesError}</p>
                 </div>
               ) : vehicles.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">No vehicles found.</p>
+                <p className="py-8 text-center text-sm text-muted-foreground">No vehicles found.</p>
               ) : (
                 <div className="space-y-2">
                   {vehicles.map((vehicle, idx) => {
@@ -294,29 +336,31 @@ export function DriverFleetDashboard() {
                     const isActive = status.toLowerCase() === "active" || status.toLowerCase() === "available" || status === "";
                     const allKeys = Object.keys(vehicle);
                     return (
-                      <div key={idx} className="rounded-lg border border-border bg-secondary/30 hover:bg-secondary/60">
-                        <button type="button" className="flex w-full items-center justify-between px-3 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
+                      <div key={idx} className="rounded-lg border border-border bg-background">
+                        <button type="button" className="flex w-full items-center justify-between px-4 py-3 text-left" onClick={() => setExpandedVehicle(isExpanded ? null : idx)}>
                           <div className="flex items-center gap-3">
                             {vehiclePhoto ? (
-                              <img src={vehiclePhoto || "/placeholder.svg"} alt={name} className="h-10 w-10 shrink-0 rounded-md object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                              <img src={vehiclePhoto || "/placeholder.svg"} alt={name} className="h-10 w-10 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                             ) : (
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                                <Car className="h-4 w-4 text-primary" />
+                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                                <Truck className="h-5 w-5 text-muted-foreground" />
                               </div>
                             )}
                             <div>
-                              <p className="text-sm font-medium text-foreground">{name}</p>
+                              <span className="text-sm font-medium text-foreground">{name}</span>
                               <div className="flex items-center gap-2">
-                                {reg && <span className="font-mono text-xs text-muted-foreground">{reg}</span>}
+                                {reg && <span className="text-xs text-muted-foreground">{reg}</span>}
                                 {vType && <span className="text-xs text-muted-foreground">{vType}</span>}
                               </div>
                             </div>
                           </div>
-                          {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                          <div className="text-muted-foreground">
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </div>
                         </button>
                         {isExpanded && (
-                          <div className="border-t border-border px-3 pb-3 pt-2">
-                            <div className="grid grid-cols-1 gap-1.5">
+                          <div className="border-t border-border px-4 py-3">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
                               {allKeys.map((key) => {
                                 const val = vehicle[key];
                                 if (!val) return null;
@@ -325,17 +369,17 @@ export function DriverFleetDashboard() {
                                 if (isImg) {
                                   const directUrl = toDirectImageUrl(val);
                                   return (
-                                    <div key={key} className="text-xs">
-                                      <span className="font-medium text-muted-foreground">{key}:</span>
-                                      <img src={directUrl || "/placeholder.svg"} alt={key} className="mt-1 w-full max-w-[280px] rounded-lg object-cover border border-border" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                                    <div key={key} className="col-span-2">
+                                      <span className="font-medium text-muted-foreground">{key}: </span>
+                                      <img src={directUrl || "/placeholder.svg"} alt={key} className="mt-1 h-20 w-20 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                                     </div>
                                   );
                                 }
                                 return (
-                                  <div key={key} className="flex items-start gap-2 text-xs">
-                                    <span className="min-w-[120px] shrink-0 font-medium text-muted-foreground">{key}:</span>
+                                  <div key={key}>
+                                    <span className="font-medium text-muted-foreground">{key}: </span>
                                     {isUrl ? (
-                                      <a href={val} target="_blank" rel="noopener noreferrer" className="text-accent underline truncate max-w-[200px]">{val}</a>
+                                      <a href={val} target="_blank" rel="noopener noreferrer" className="text-primary underline">{val}</a>
                                     ) : (
                                       <span className="text-foreground">{val}</span>
                                     )}

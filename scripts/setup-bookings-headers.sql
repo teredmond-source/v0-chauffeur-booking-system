@@ -1,2 +1,4 @@
--- This is a placeholder. The actual setup is done via an API endpoint.
--- See /api/setup-headers
+-- This script is a reference for the Google Sheets headers used in the booking system.
+-- The actual data is stored in Google Sheets, not a SQL database.
+-- Headers for the Bookings sheet:
+-- Request ID | Customer Name | Phone | Email | Pickup Eircode | Destination Eircode | Vehicle Type | Date | Time | Pax | Distance KM | Travel Time | NTA Max Fare | Adjusted Fare | Owner Fare | Status | Origin Address | Destination Address | Preferred Reply | Journey Status | Driver Name | Vehicle Reg | Driver Lat | Driver Lng | Pickup Timestamp | Completion Timestamp | Actual KM Driven | Actual Duration

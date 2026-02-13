@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBookings, updateSheetCell } from "../../../../lib/google-sheets";
 
-// Column indices in the Bookings sheet (0-based from the booking API)
-// A=Request ID, B=Customer Name, C=Phone, D=Email, E=General Query,
-// F=Pickup Eircode, G=Destination Eircode, H=Vehicle Type, I=Date, J=Time,
-// K=Pax, L=Distance KM, M=Travel Time, N=NTA Max Fare, O=Adjusted Fare,
-// P=Status, Q=Timestamp, R=Origin Address, S=Destination Address,
-// T=Owner Fare, U=Assigned Driver
-
 const COL_MAP: Record<string, string> = {
   "Owner Fare": "T",
   "Status": "P",
@@ -46,10 +39,8 @@ export async function POST(request: Request) {
     let rowIndex: string;
 
     if (directRowIndex) {
-      // Use the directly provided row index (most reliable)
       rowIndex = String(directRowIndex);
     } else {
-      // Fall back to finding by Request ID
       const bookings = await getBookings();
       const booking = bookings.find((b) => b["Request ID"] === requestId);
       if (!booking) {

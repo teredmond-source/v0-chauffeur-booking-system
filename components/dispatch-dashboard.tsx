@@ -3,19 +3,25 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Loader2, RefreshCw, ChevronDown, ChevronUp,
-  CheckCircle2, Clock, MapPin, Car, Navigation,
+  CheckCircle2, Clock, MapPin, Car, Navigation, UserPlus, User, ClipboardList,
 } from "lucide-react";
 
 interface Booking {
   [key: string]: string;
 }
 
+interface Driver {
+  [key: string]: string;
+}
+
 export function DispatchDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [assigningDriver, setAssigningDriver] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("Confirmed");
 
   const fetchBookings = useCallback(async () => {
@@ -33,9 +39,21 @@ export function DispatchDashboard() {
     }
   }, []);
 
+  const fetchDrivers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/drivers");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch drivers");
+      setDrivers(data.drivers || []);
+    } catch {
+      setDrivers([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchBookings();
-  }, [fetchBookings]);
+    fetchDrivers();
+  }, [fetchBookings, fetchDrivers]);
 
   const handleStatusUpdate = async (requestId: string, newStatus: string, rowIndex?: string) => {
     setUpdatingStatus(requestId);
@@ -59,7 +77,40 @@ export function DispatchDashboard() {
     }
   };
 
-  // Only show Confirmed and Completed bookings in dispatch
+  const handleAssignDriver = async (booking: Booking, driverName: string) => {
+    const requestId = booking["Request ID"];
+    const rowIndex = booking["_rowIndex"];
+    setAssigningDriver(requestId);
+    try {
+      const res = await fetch("/api/dispatch/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId,
+          rowIndex,
+          updates: { "Driver Name": driverName },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setBookings((prev) =>
+        prev.map((b) =>
+          b["Request ID"] === requestId ? { ...b, "Driver Name": driverName } : b
+        )
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to assign driver");
+    } finally {
+      setAssigningDriver(null);
+    }
+  };
+
+  const getDriverDisplayName = (driver: Driver): string => {
+    const firstName = driver["First Name"] || driver["first name"] || "";
+    const lastName = driver["Last Name"] || driver["Surname"] || driver["last name"] || driver["Name"] || "";
+    return (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || Object.values(driver)[0]) || "Unknown";
+  };
+
   const dispatchBookings = bookings.filter((b) => {
     const status = b["Status"] || "";
     if (filterStatus === "all") return status === "Confirmed" || status === "Completed";
@@ -71,73 +122,71 @@ export function DispatchDashboard() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h3 className="mb-4 text-lg font-semibold text-foreground">Dispatch Dashboard</h3>
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading dispatch jobs...</span>
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
+          <ClipboardList className="h-5 w-5 text-accent" />
+          Pending Executive Bookings
+        </h2>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Loading dispatch jobs...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-foreground">
-          Dispatch Dashboard
-          <span className="ml-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-accent/10 px-2 text-xs font-bold text-accent">
+        <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
+          <ClipboardList className="h-5 w-5 text-accent" />
+          Pending Executive Bookings
+          <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
             {dispatchBookings.length}
           </span>
-        </h3>
+        </h2>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-green-800">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-              {confirmedCount} Active
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-              {completedCount} Completed
-            </span>
-          </div>
+          <span className="flex items-center gap-1 text-xs text-green-400">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-400" />
+            {confirmedCount} Active
+          </span>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <CheckCircle2 className="h-3 w-3" />
+            {completedCount} Completed
+          </span>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-accent focus:outline-none"
+            className="rounded-lg border border-muted-foreground/30 bg-secondary px-3 py-1.5 text-xs text-foreground focus:border-accent focus:outline-none"
           >
             <option value="all">All Dispatch</option>
             <option value="Confirmed">Active Jobs</option>
             <option value="Completed">Completed Jobs</option>
           </select>
-          <button
-            type="button"
-            onClick={fetchBookings}
-            className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
+          <button type="button" onClick={() => { fetchBookings(); fetchDrivers(); }} className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground">
             <RefreshCw className="h-3 w-3" /> Refresh
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-          <p className="text-xs text-destructive">{error}</p>
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
         </div>
       )}
 
       {dispatchBookings.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No dispatch jobs found. Confirmed bookings will appear here.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">No dispatch jobs found. Confirmed bookings will appear here.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {dispatchBookings.map((booking) => {
             const requestId = booking["Request ID"];
             const uniqueKey = booking["_rowIndex"] || requestId;
             const isExpanded = expandedBooking === uniqueKey;
             const status = booking["Status"] || "Confirmed";
+            const assignedDriver = booking["Driver Name"] || "";
             const displayFare = booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"] || "0";
 
-            // Check if the booking date/time has passed
             const bookingDate = booking["Date"] || "";
             const bookingTime = booking["Time"] || "23:59";
             let jobDatePassed = false;
@@ -152,22 +201,24 @@ export function DispatchDashboard() {
             }
 
             return (
-              <div key={uniqueKey} className={`rounded-lg border ${status === "Completed" ? "border-border bg-muted/30" : "border-green-200 bg-green-50/30"}`}>
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between px-4 py-3 text-left"
-                  onClick={() => setExpandedBooking(isExpanded ? null : uniqueKey)}
-                >
+              <div key={uniqueKey} className="rounded-lg border border-border bg-background">
+                <button type="button" onClick={() => setExpandedBooking(isExpanded ? null : uniqueKey)} className="flex w-full items-center justify-between px-4 py-3 text-left">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-bold text-accent">{requestId}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{requestId}</span>
                     <span className="text-sm font-medium text-foreground">{booking["Customer Name"]}</span>
                     {status === "Completed" ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-black px-2 py-0.5 text-xs font-medium text-white">
-                        <CheckCircle2 className="h-3 w-3" /> Completed
+                      <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        Completed
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Active
+                      <span className="flex items-center gap-1 rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">
+                        Active
+                      </span>
+                    )}
+                    {assignedDriver && (
+                      <span className="flex items-center gap-1 rounded-full bg-blue-400/10 px-2 py-0.5 text-xs font-medium text-blue-400">
+                        <User className="h-3 w-3" />
+                        {assignedDriver}
                       </span>
                     )}
                   </div>
@@ -181,54 +232,85 @@ export function DispatchDashboard() {
 
                 {isExpanded && (
                   <div className="border-t border-border px-4 pb-4 pt-3">
-                    {/* Job Details */}
-                    <div className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                    <div className="mb-4 grid gap-3 sm:grid-cols-2">
                       <div className="flex items-start gap-2">
-                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 text-accent" />
                         <div>
                           <p className="text-xs text-muted-foreground">Pickup</p>
-                          <p className="font-medium text-foreground">{booking["Origin Address"] || booking["Pickup Eircode"]}</p>
+                          <p className="text-sm font-medium text-foreground">{booking["Origin Address"] || booking["Pickup Eircode"]}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+                        <Navigation className="mt-0.5 h-3.5 w-3.5 text-accent" />
                         <div>
                           <p className="text-xs text-muted-foreground">Destination</p>
-                          <p className="font-medium text-foreground">{booking["Destination Address"] || booking["Destination Eircode"]}</p>
+                          <p className="text-sm font-medium text-foreground">{booking["Destination Address"] || booking["Destination Eircode"]}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <Car className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <Car className="mt-0.5 h-3.5 w-3.5 text-accent" />
                         <div>
                           <p className="text-xs text-muted-foreground">Vehicle</p>
-                          <p className="font-medium text-foreground">{booking["Vehicle Type"]}</p>
+                          <p className="text-sm font-medium text-foreground">{booking["Vehicle Type"]}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <Clock className="mt-0.5 h-3.5 w-3.5 text-accent" />
                         <div>
                           <p className="text-xs text-muted-foreground">Scheduled</p>
-                          <p className="font-medium text-foreground">{bookingDate}{bookingTime !== "23:59" ? ` at ${bookingTime}` : ""}</p>
+                          <p className="text-sm font-medium text-foreground">{bookingDate}{bookingTime !== "23:59" ? ` at ${bookingTime}` : ""}</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-4 flex items-center justify-between rounded-lg bg-accent/5 border border-accent/20 px-4 py-3">
-                      <span className="text-sm text-muted-foreground">Fare</span>
-                      <span className="text-lg font-bold text-foreground">{"\u20AC"}{displayFare}</span>
+                    <div className="mb-4 rounded-lg bg-accent/5 p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Fare</p>
+                      <p className="text-2xl font-bold text-foreground">{"\u20AC"}{displayFare}</p>
+                    </div>
+
+                    {/* Driver Assignment */}
+                    <div className="mb-3">
+                      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        <UserPlus className="h-3.5 w-3.5" />
+                        Assign Driver
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={assignedDriver}
+                          onChange={(e) => handleAssignDriver(booking, e.target.value)}
+                          disabled={assigningDriver === requestId || status === "Completed"}
+                          className="flex-1 rounded-lg border border-muted-foreground/30 bg-secondary px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none disabled:opacity-50"
+                        >
+                          <option value="">-- Select Driver --</option>
+                          {drivers.map((driver, idx) => {
+                            const name = getDriverDisplayName(driver);
+                            return (
+                              <option key={idx} value={name}>{name}</option>
+                            );
+                          })}
+                        </select>
+                        {assigningDriver === requestId && (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
 
                     {/* Dispatch Actions */}
-                    <div className="space-y-2">
-                      <a
-                        href={`/dispatch/${requestId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-                      >
-                        <Navigation className="h-4 w-4" />
-                        Open Driver Dispatch
-                      </a>
+                    <div className="flex flex-col gap-2">
+                      {assignedDriver ? (
+                        <a
+                          href={`/dispatch/${requestId}`}
+                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                        >
+                          <User className="h-4 w-4" />
+                          {assignedDriver} - Open Dispatch
+                        </a>
+                      ) : (
+                        <div className="flex w-full items-center justify-center gap-2 rounded-lg bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground">
+                          <UserPlus className="h-4 w-4" />
+                          Assign a driver to open dispatch
+                        </div>
+                      )}
 
                       {status === "Confirmed" && (
                         jobDatePassed ? (
@@ -246,18 +328,18 @@ export function DispatchDashboard() {
                             {updatingStatus === requestId ? "Updating..." : "Confirm Job Completed"}
                           </button>
                         ) : (
-                          <div className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 cursor-not-allowed" title={`Available after ${bookingDate} ${bookingTime}`}>
-                            <Clock className="h-4 w-4" />
+                          <p className="flex items-center justify-center gap-2 rounded-lg bg-secondary/50 px-4 py-2.5 text-xs text-muted-foreground">
+                            <Clock className="h-3.5 w-3.5" />
                             Job Not Yet Due
-                          </div>
+                          </p>
                         )
                       )}
 
                       {status === "Completed" && (
-                        <div className="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-medium text-white">
-                          <CheckCircle2 className="h-4 w-4" />
+                        <p className="flex items-center justify-center gap-2 rounded-lg bg-green-400/10 px-4 py-2.5 text-xs text-green-400">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
                           Job Completed
-                        </div>
+                        </p>
                       )}
                     </div>
                   </div>

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Navigation, MapPin, Clock, Car, Users, Phone, Calendar,
   Loader2, XCircle, CheckCircle2, ExternalLink, MessageCircle,
-  Play, UserCheck, Flag, Shield,
+  Play, UserCheck, Flag, Shield, ArrowLeft,
 } from "lucide-react";
 
 interface BookingData {
@@ -16,6 +16,7 @@ type JourneyStage = "idle" | "en-route" | "on-board" | "completed";
 
 export default function DriverDispatchPage() {
   const params = useParams();
+  const router = useRouter();
   const bookingId = params.bookingId as string;
 
   const [booking, setBooking] = useState<BookingData | null>(null);
@@ -39,7 +40,6 @@ export default function DriverDispatchPage() {
       if (!found) throw new Error("Booking not found");
       setBooking(found);
 
-      // Restore journey state from sheet data
       const savedStage = found["Journey Status"] as JourneyStage;
       if (savedStage && ["idle", "en-route", "on-board", "completed"].includes(savedStage)) {
         setJourneyStage(savedStage);
@@ -57,14 +57,12 @@ export default function DriverDispatchPage() {
     fetchBooking();
   }, [fetchBooking]);
 
-  // Start GPS tracking when en-route or on-board
   useEffect(() => {
     if ((journeyStage === "en-route" || journeyStage === "on-board") && navigator.geolocation) {
       locationWatchRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setDriverLocation(loc);
-          // Send location to server (throttled by the watch itself)
           if (booking) {
             fetch("/api/dispatch/update", {
               method: "POST",
@@ -89,7 +87,6 @@ export default function DriverDispatchPage() {
     };
   }, [journeyStage, booking, bookingId]);
 
-  // Elapsed time counter when on-board
   useEffect(() => {
     if (journeyStage === "on-board" && pickupTime) {
       elapsedRef.current = setInterval(() => {
@@ -128,7 +125,6 @@ export default function DriverDispatchPage() {
     }
   };
 
-  // Stage 1: Start Journey - driver heads to client
   const handleStartJourney = async () => {
     if (!booking) return;
     const driverName = booking["Driver Name"] || "Your chauffeur";
@@ -142,7 +138,6 @@ export default function DriverDispatchPage() {
       "Vehicle Reg": vehicleReg,
     });
 
-    // Generate WhatsApp message to client
     const phone = booking["Phone"]?.replace(/\s/g, "").replace(/^0/, "353") || "";
     const clientName = booking["Customer Name"] || "there";
     const trackingUrl = `${window.location.origin}/track/${bookingId}`;
@@ -151,7 +146,6 @@ export default function DriverDispatchPage() {
     window.open(waUrl, "_blank");
   };
 
-  // Stage 2: Client On Board - starts the "meter"
   const handleClientOnBoard = async () => {
     const now = new Date().toISOString();
     setPickupTime(now);
@@ -162,22 +156,18 @@ export default function DriverDispatchPage() {
     });
   };
 
-  // Stage 3: Complete Job
   const handleCompleteJob = async () => {
     if (!window.confirm("Mark this job as completed?")) return;
     const now = new Date().toISOString();
     setCompletionTime(now);
     setJourneyStage("completed");
 
-    // Calculate actual duration
     let actualDuration = "";
     if (pickupTime) {
       const mins = Math.round((Date.now() - new Date(pickupTime).getTime()) / 60000);
       actualDuration = String(mins);
     }
 
-    // Calculate actual distance from original estimate (GPS distance tracking is complex,
-    // so we use the original estimate -- can be enhanced later with waypoint tracking)
     const actualKm = booking?.["Distance KM"] || "";
 
     await updateDispatch({
@@ -190,7 +180,6 @@ export default function DriverDispatchPage() {
       "Driver Lng": "",
     });
 
-    // Send thank-you WhatsApp with Google Review link
     if (booking) {
       const phone = booking["Phone"]?.replace(/\s/g, "").replace(/^0/, "353") || "";
       const clientName = booking["Customer Name"] || "there";
@@ -208,7 +197,7 @@ export default function DriverDispatchPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-accent" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         <span className="ml-2 text-muted-foreground">Loading dispatch...</span>
       </div>
     );
@@ -216,10 +205,10 @@ export default function DriverDispatchPage() {
 
   if (error || !booking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="max-w-md rounded-xl border border-border bg-card p-8 text-center">
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
           <XCircle className="mx-auto h-12 w-12 text-destructive" />
-          <h2 className="mt-4 text-xl font-semibold text-foreground">Dispatch Not Found</h2>
+          <h1 className="mt-4 text-xl font-bold text-foreground">Dispatch Not Found</h1>
           <p className="mt-2 text-sm text-muted-foreground">{error || "This booking could not be found."}</p>
         </div>
       </div>
@@ -234,7 +223,6 @@ export default function DriverDispatchPage() {
   const telLink = `tel:${customerPhone.replace(/\s/g, "")}`;
   const displayFare = booking["Owner Fare"] || booking["Adjusted Fare"] || booking["NTA Max Fare"] || "0";
 
-  // Stage progress indicator
   const stages = [
     { key: "idle", label: "Ready" },
     { key: "en-route", label: "En Route" },
@@ -247,40 +235,44 @@ export default function DriverDispatchPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-lg px-4 py-6">
         {/* Header */}
-        <div className="mb-6 text-center">
-          <h1 className="font-serif text-2xl font-bold text-foreground">Driver Dispatch</h1>
-          <p className="text-sm text-muted-foreground">
-            Booking <span className="font-mono font-bold text-accent">{bookingId}</span>
-          </p>
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="mb-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </button>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-foreground">Driver Dispatch</h1>
+            <p className="text-sm text-muted-foreground">
+              Booking <span className="font-mono">{bookingId}</span>
+            </p>
+          </div>
         </div>
 
         {/* Stage Progress Bar */}
-        <div className="mb-6 rounded-xl border border-border bg-card p-4">
+        <div className="mb-6">
           <div className="flex items-center justify-between">
             {stages.map((stage, idx) => (
               <React.Fragment key={stage.key}>
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                      idx <= currentStageIdx
-                        ? idx === currentStageIdx
-                          ? "bg-accent text-accent-foreground"
-                          : "bg-green-600 text-white"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                    idx <= currentStageIdx ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}>
                     {idx < currentStageIdx ? (
                       <CheckCircle2 className="h-4 w-4" />
                     ) : (
                       idx + 1
                     )}
                   </div>
-                  <span className={`mt-1 text-[10px] ${idx <= currentStageIdx ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                  <span className={`text-[10px] ${idx <= currentStageIdx ? "font-medium text-foreground" : "text-muted-foreground"}`}>
                     {stage.label}
                   </span>
                 </div>
                 {idx < stages.length - 1 && (
-                  <div className={`mx-1 h-0.5 flex-1 rounded ${idx < currentStageIdx ? "bg-green-600" : "bg-muted"}`} />
+                  <div className={`mx-1 mb-4 h-0.5 flex-1 ${idx < currentStageIdx ? "bg-primary" : "bg-muted"}`} />
                 )}
               </React.Fragment>
             ))}
@@ -288,24 +280,21 @@ export default function DriverDispatchPage() {
         </div>
 
         {/* Customer Info */}
-        <div className="mb-4 rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Customer</h3>
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">{booking["Customer Name"]}</span>
+        <div className="mb-4 rounded-xl border border-border bg-card p-4">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-foreground">{booking["Customer Name"]}</p>
               {customerPhone && (
-                <a
-                  href={telLink}
-                  className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                  Call Client
+                <a href={telLink} className="flex items-center gap-1 text-sm text-primary">
+                  <Phone className="h-3 w-3" />
+                  Call Client: {customerPhone}
                 </a>
               )}
             </div>
             {booking["Pax"] && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
                 {booking["Pax"]} passenger{Number.parseInt(booking["Pax"]) !== 1 ? "s" : ""}
               </div>
             )}
@@ -313,26 +302,26 @@ export default function DriverDispatchPage() {
         </div>
 
         {/* Journey Details */}
-        <div className="mb-4 rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Journey</h3>
+        <div className="mb-4 rounded-xl border border-border bg-card p-4">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Journey</h2>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100">
-                <MapPin className="h-3.5 w-3.5 text-green-600" />
+              <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-green-400/10">
+                <MapPin className="h-3 w-3 text-green-400" />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Pickup</p>
                 <p className="text-sm font-medium text-foreground">{pickupAddress}</p>
               </div>
             </div>
-            <div className="ml-3 border-l-2 border-dashed border-border py-1 pl-6">
+            <div className="ml-3 border-l-2 border-dashed border-muted py-1 pl-6">
               <p className="text-xs text-muted-foreground">{booking["Distance KM"]} km &middot; {booking["Travel Time"]} mins est.</p>
             </div>
             <div className="flex items-start gap-3">
-              <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10">
-                <MapPin className="h-3.5 w-3.5 text-accent" />
+              <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+                <MapPin className="h-3 w-3 text-primary" />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Destination</p>
                 <p className="text-sm font-medium text-foreground">{destAddress}</p>
               </div>
@@ -340,48 +329,48 @@ export default function DriverDispatchPage() {
           </div>
 
           {(booking["Date"] || booking["Time"]) && (
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2 text-sm">
-              <Calendar className="h-4 w-4 text-accent" />
-              <span className="text-foreground">{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</span>
+            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</span>
             </div>
           )}
 
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Car className="h-4 w-4" />
-              <span>{booking["Vehicle Type"]}</span>
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Car className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">{booking["Vehicle Type"]}</span>
             </div>
-            <span className="text-lg font-bold text-accent">{"\u20AC"}{displayFare}</span>
+            <span className="font-semibold text-foreground">{"\u20AC"}{displayFare}</span>
           </div>
         </div>
 
-        {/* Journey Timestamps (when active) */}
+        {/* Journey Timestamps */}
         {(pickupTime || completionTime) && (
-          <div className="mb-4 rounded-xl border border-border bg-card p-5">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Journey Log</h3>
+          <div className="mb-4 rounded-xl border border-border bg-card p-4">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Journey Log</h2>
             <div className="space-y-2 text-sm">
               {pickupTime && (
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Client On Board</span>
-                  <span className="font-medium text-foreground">{formatTime(pickupTime)}</span>
+                  <span className="text-foreground">{formatTime(pickupTime)}</span>
                 </div>
               )}
               {journeyStage === "on-board" && (
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Elapsed</span>
-                  <span className="font-mono font-medium text-accent">{elapsedMinutes} min</span>
+                  <span className="font-medium text-primary">{elapsedMinutes} min</span>
                 </div>
               )}
               {completionTime && (
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Job Completed</span>
-                  <span className="font-medium text-foreground">{formatTime(completionTime)}</span>
+                  <span className="text-foreground">{formatTime(completionTime)}</span>
                 </div>
               )}
               {completionTime && pickupTime && (
-                <div className="flex items-center justify-between border-t border-border pt-2">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Duration</span>
-                  <span className="font-bold text-foreground">
+                  <span className="font-medium text-foreground">
                     {Math.round((new Date(completionTime).getTime() - new Date(pickupTime).getTime()) / 60000)} mins
                   </span>
                 </div>
@@ -390,102 +379,68 @@ export default function DriverDispatchPage() {
           </div>
         )}
 
-        {/* Action Buttons - Stage Based */}
+        {/* Action Buttons */}
         <div className="space-y-3">
-          {/* STAGE: IDLE - Ready to start */}
           {journeyStage === "idle" && (
             <>
-              <button
-                type="button"
-                onClick={handleStartJourney}
-                disabled={updating}
-                className="flex w-full items-center justify-center gap-3 rounded-xl bg-green-600 px-6 py-4 text-base font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-              >
-                {updating ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5" />}
+              <button type="button" onClick={handleStartJourney} disabled={updating} className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
                 Message Client / Start Journey
               </button>
-              <a
-                href={googleMapsPickupUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-accent bg-transparent px-6 py-3 text-sm font-semibold text-accent hover:bg-accent/5"
-              >
+              <a href={googleMapsPickupUrl} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary">
                 <Navigation className="h-4 w-4" />
                 Navigate to Pickup
               </a>
             </>
           )}
 
-          {/* STAGE: EN-ROUTE - Heading to client */}
           {journeyStage === "en-route" && (
             <>
-              <div className="rounded-xl border-2 border-green-500 bg-green-50 p-4 text-center">
-                <div className="flex items-center justify-center gap-2 text-green-700">
-                  <Navigation className="h-5 w-5 animate-pulse" />
-                  <span className="font-semibold">En Route to Client</span>
+              <div className="rounded-lg bg-blue-400/10 p-3 text-center">
+                <div className="flex items-center justify-center gap-2 text-blue-400">
+                  <Navigation className="h-4 w-4" />
+                  <span className="text-sm font-medium">En Route to Client</span>
                 </div>
-                <p className="mt-1 text-xs text-green-600">Client has been notified and can track your location</p>
+                <p className="mt-1 text-xs text-blue-400/80">Client has been notified and can track your location</p>
               </div>
-              <a
-                href={googleMapsPickupUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-6 py-4 text-base font-semibold text-accent-foreground hover:bg-accent/90"
-              >
-                <Navigation className="h-5 w-5" />
+              <a href={googleMapsPickupUrl} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary">
+                <Navigation className="h-4 w-4" />
                 Navigate to Pickup
               </a>
-              <button
-                type="button"
-                onClick={handleClientOnBoard}
-                disabled={updating}
-                className="flex w-full items-center justify-center gap-3 rounded-xl bg-blue-600 px-6 py-4 text-base font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                {updating ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserCheck className="h-5 w-5" />}
+              <button type="button" onClick={handleClientOnBoard} disabled={updating} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
+                {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
                 Client On Board
               </button>
             </>
           )}
 
-          {/* STAGE: ON-BOARD - Client is in the vehicle */}
           {journeyStage === "on-board" && (
             <>
-              <div className="rounded-xl border-2 border-blue-500 bg-blue-50 p-4 text-center">
-                <div className="flex items-center justify-center gap-2 text-blue-700">
-                  <Car className="h-5 w-5" />
-                  <span className="font-semibold">Journey In Progress</span>
+              <div className="rounded-lg bg-green-400/10 p-3 text-center">
+                <div className="flex items-center justify-center gap-2 text-green-400">
+                  <Car className="h-4 w-4" />
+                  <span className="text-sm font-medium">Journey In Progress</span>
                 </div>
-                <p className="mt-1 text-xs text-blue-600">
+                <p className="mt-1 text-xs text-green-400/80">
                   Client on board since {pickupTime ? formatTime(pickupTime) : "--"} &middot; {elapsedMinutes} min elapsed
                 </p>
               </div>
-              <a
-                href={googleMapsDestUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-6 py-4 text-base font-semibold text-accent-foreground hover:bg-accent/90"
-              >
-                <Navigation className="h-5 w-5" />
+              <a href={googleMapsDestUrl} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-4 py-3 text-sm font-medium text-foreground hover:bg-secondary">
+                <Navigation className="h-4 w-4" />
                 Navigate to Destination
               </a>
-              <button
-                type="button"
-                onClick={handleCompleteJob}
-                disabled={updating}
-                className="flex w-full items-center justify-center gap-3 rounded-xl bg-red-600 px-6 py-4 text-base font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {updating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Flag className="h-5 w-5" />}
+              <button type="button" onClick={handleCompleteJob} disabled={updating} className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4" />}
                 Complete Job
               </button>
             </>
           )}
 
-          {/* STAGE: COMPLETED */}
           {journeyStage === "completed" && (
-            <div className="rounded-xl border-2 border-black bg-black p-6 text-center">
-              <CheckCircle2 className="mx-auto h-10 w-10 text-white" />
-              <h3 className="mt-3 text-lg font-bold text-white">Job Completed</h3>
-              <p className="mt-1 text-sm text-gray-300">
+            <div className="rounded-lg bg-muted p-4 text-center">
+              <CheckCircle2 className="mx-auto h-8 w-8 text-green-400" />
+              <p className="mt-2 font-medium text-foreground">Job Completed</p>
+              <p className="mt-1 text-xs text-muted-foreground">
                 All journey data has been recorded. The client tracking link has been deactivated.
               </p>
             </div>
@@ -494,8 +449,8 @@ export default function DriverDispatchPage() {
 
         {/* Driver License Notice */}
         {journeyStage !== "completed" && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-secondary/40 px-4 py-3 text-xs text-muted-foreground">
-            <Shield className="h-4 w-4 shrink-0" />
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+            <Shield className="h-4 w-4" />
             <span>Your SPSV license details are visible to the client via the tracking link.</span>
           </div>
         )}

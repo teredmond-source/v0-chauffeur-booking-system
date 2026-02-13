@@ -98,7 +98,8 @@ export function AddressAutocomplete({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-muted-foreground">
+      <label htmlFor={id} className="mb-1 flex items-center gap-1.5 text-sm font-medium text-foreground">
+        <MapPin className="h-3.5 w-3.5 text-accent" />
         {label} {required && <span className="text-destructive">*</span>}
       </label>
       <div className="relative">
@@ -111,20 +112,20 @@ export function AddressAutocomplete({
           onFocus={() => { if (predictions.length > 0) setIsOpen(true); }}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          className="w-full rounded-lg border border-muted-foreground/30 bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
         {loading && (
-          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         )}
       </div>
-      <p className="mt-1 text-xs text-muted-foreground/70">
+      <p className="mt-1 text-xs text-muted-foreground">
         Start typing an address or Eircode. Ireland only.
       </p>
 
       {isOpen && predictions.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+        <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-card shadow-lg">
           {predictions.map((prediction, idx) => (
             <li key={prediction.placeId}>
               <button
@@ -137,7 +138,7 @@ export function AddressAutocomplete({
                 }`}
               >
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
-                <span className="leading-snug">{prediction.description}</span>
+                <span>{prediction.description}</span>
               </button>
             </li>
           ))}

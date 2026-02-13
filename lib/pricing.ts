@@ -5,6 +5,12 @@ export interface FareBreakdown {
   tariffA: number;
   tariffB: number;
   totalFare: number;
+  /** Low estimate: distance-based only, no traffic time charges */
+  fareLow: number;
+  /** High estimate: includes time-based charges for traffic delays */
+  fareHigh: number;
+  /** Suggested premium/limousine fare: NTA high fare + 20% executive surcharge */
+  premiumFare: number;
   distanceKm: number;
   durationMinutes: number;
   rateType: RateType;
@@ -47,12 +53,12 @@ const INITIAL_DISTANCE_KM = 0.5; // 500m included in initial charge
 
 // Irish public holidays (month/day) - fixed dates
 const PUBLIC_HOLIDAYS_FIXED = [
-  [1, 1],   // New Year's Day
-  [2, 3],   // St. Brigid's Day (first Mon in Feb - simplified)
-  [3, 17],  // St. Patrick's Day
-  [5, 5],   // May Bank Holiday (first Mon - simplified)
-  [6, 2],   // June Bank Holiday (first Mon - simplified)
-  [8, 4],   // August Bank Holiday (first Mon - simplified)
+  [1, 1], // New Year's Day
+  [2, 3], // St. Brigid's Day (first Mon in Feb - simplified)
+  [3, 17], // St. Patrick's Day
+  [5, 5], // May Bank Holiday (first Mon - simplified)
+  [6, 2], // June Bank Holiday (first Mon - simplified)
+  [8, 4], // August Bank Holiday (first Mon - simplified)
   [10, 27], // October Bank Holiday (last Mon - simplified)
   [12, 25], // Christmas Day
   [12, 26], // St. Stephen's Day
@@ -63,7 +69,7 @@ const PUBLIC_HOLIDAYS_FIXED = [
  * - Standard: 8am-8pm Mon-Sat (excl public holidays)
  * - Premium: 8pm-8am Mon-Sat, all day Sun, most public holidays
  * - Special: 00:00-04:00 Sat/Sun, Christmas Eve 20:00 to St Stephen's 08:00,
- *            New Year's Eve 20:00 to New Year's Day 08:00
+ *   New Year's Eve 20:00 to New Year's Day 08:00
  */
 export function determineRateType(pickupDate?: string, pickupTime?: string): RateType {
   if (!pickupDate || !pickupTime) return "standard"; // Default if unknown
@@ -143,13 +149,39 @@ export function calculateNTAFare(
     tariffB = (distanceKm - TARIFF_A_THRESHOLD_KM - INITIAL_DISTANCE_KM) * rate.tariffBPerKm;
   }
 
-  const totalFare = rate.initialCharge + tariffA + tariffB;
+  // Low estimate: distance charges only (no time-based charges)
+  const fareLow = rate.initialCharge + tariffA + tariffB;
+
+  // High estimate: adds time-based charges for expected journey duration
+  // NTA meters charge per-minute in addition to per-km
+  let timeCharge = 0;
+  if (rateType === "special") {
+    timeCharge = durationMinutes * rate.tariffBPerMin;
+  } else if (distanceKm <= TARIFF_A_THRESHOLD_KM + INITIAL_DISTANCE_KM) {
+    timeCharge = durationMinutes * rate.tariffAPerMin;
+  } else {
+    // Split time proportionally between tariff A and B distances
+    const tariffAShare = TARIFF_A_THRESHOLD_KM / distanceKm;
+    timeCharge = (durationMinutes * tariffAShare * rate.tariffAPerMin) + 
+                 (durationMinutes * (1 - tariffAShare) * rate.tariffBPerMin);
+  }
+  const fareHigh = fareLow + timeCharge;
+
+  // Premium/Limousine fare: high estimate + 20% executive surcharge
+  // 20% is the standard premium for limousine/executive chauffeur services in Ireland
+  const EXECUTIVE_SURCHARGE = 0.20;
+  const premiumFare = fareHigh * (1 + EXECUTIVE_SURCHARGE);
+
+  const totalFare = Math.round(((fareLow + fareHigh) / 2) * 100) / 100;
 
   return {
     initialCharge: rate.initialCharge,
     tariffA: Math.round(tariffA * 100) / 100,
     tariffB: Math.round(tariffB * 100) / 100,
-    totalFare: Math.round(totalFare * 100) / 100,
+    totalFare,
+    fareLow: Math.round(fareLow * 100) / 100,
+    fareHigh: Math.round(fareHigh * 100) / 100,
+    premiumFare: Math.round(premiumFare * 100) / 100,
     distanceKm,
     durationMinutes,
     rateType,

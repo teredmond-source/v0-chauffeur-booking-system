@@ -44,14 +44,13 @@ export async function POST(request: Request) {
 
     // Calculate NTA fare based on pickup date/time (determines Standard/Premium/Special rate)
     const fareResult = calculateNTAFare(distanceKm, durationMinutes, pickupDate, pickupTime);
-    const ntaFare = fareResult.totalFare;
-    const finalFare = Math.round(Math.max(ntaFare, Number(minFare) || 15));
+    const ntaFareLow = fareResult.fareLow;
+    const ntaFareHigh = fareResult.fareHigh;
+    const premiumFare = fareResult.premiumFare;
+    const ntaMaxFare = ntaFareHigh;
+    const finalFare = Math.round(Math.max(ntaMaxFare, Number(minFare) || 15));
 
-    // Build row data matching column order:
-    // A: Request ID, B: Customer Name, C: Phone, D: Email, E: General Query,
-    // F: Pickup Eircode, G: Destination Eircode, H: Vehicle Type, I: Date, J: Time,
-    // K: Pax, L: Distance KM, M: Travel Time, N: NTA Max Fare, O: Adjusted Fare,
-    // P: Status, Q: Timestamp, R: Origin Address, S: Destination Address, T: Owner Fare, U: Preferred Reply
+    // Build row data matching column order
     const rowData = [
       requestId,
       customerName,
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
       String(passengers),
       String(distanceKm),
       String(durationMinutes),
-      ntaFare.toFixed(2),
+      ntaMaxFare.toFixed(2),
       String(finalFare),
       "Requested",
       timestamp,
@@ -74,16 +73,19 @@ export async function POST(request: Request) {
       destinationAddress,
       "",
       preferredReply,
+      ntaFareLow.toFixed(2),
+      ntaFareHigh.toFixed(2),
+      premiumFare.toFixed(2),
     ];
 
     // Write to Google Sheet
-    await appendSheetRow("Bookings!A:U", [rowData]);
+    await appendSheetRow("Bookings!A:X", [rowData]);
 
     return NextResponse.json({
       success: true,
       bookingId: requestId,
       distance: { km: distanceKm, minutes: durationMinutes, originAddress, destinationAddress },
-      fare: { totalFare: finalFare },
+      fare: { totalFare: finalFare, fareLow: ntaFareLow, fareHigh: ntaFareHigh, premiumFare },
     });
   } catch (error) {
     console.error("Booking API error:", error);

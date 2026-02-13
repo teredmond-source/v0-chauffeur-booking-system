@@ -7,7 +7,6 @@ export async function GET() {
     return NextResponse.json({ bookings });
   } catch (error) {
     console.error("[v0] Error fetching bookings:", error);
-    // If sheet doesn't exist, return empty
     return NextResponse.json({ bookings: [] });
   }
 }

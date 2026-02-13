@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, Loader2, Car, MapPin, Calendar, Clock } from "lucide-react";
 
@@ -43,7 +43,6 @@ export default function ConfirmBookingPage() {
       const res = await fetch("/api/bookings");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      // Find by row index first (unique), then fall back to Request ID
       let found: BookingData | undefined;
       if (rowParam) {
         found = data.bookings?.find((b: BookingData) => b["_rowIndex"] === rowParam);
@@ -61,7 +60,7 @@ export default function ConfirmBookingPage() {
     } finally {
       setLoading(false);
     }
-  }, [bookingId]);
+  }, [bookingId, rowParam]);
 
   useEffect(() => {
     fetchBooking();
@@ -94,9 +93,9 @@ export default function ConfirmBookingPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex items-center gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
-          <span className="text-muted-foreground">Loading booking details...</span>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Loading booking details...</span>
         </div>
       </div>
     );
@@ -104,10 +103,10 @@ export default function ConfirmBookingPage() {
 
   if (error || !booking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="max-w-md rounded-xl border border-border bg-card p-8 text-center">
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
           <XCircle className="mx-auto h-12 w-12 text-destructive" />
-          <h2 className="mt-4 text-xl font-semibold text-foreground">Booking Not Found</h2>
+          <h1 className="mt-4 text-xl font-bold text-foreground">Booking Not Found</h1>
           <p className="mt-2 text-sm text-muted-foreground">{error || "This booking reference could not be found."}</p>
         </div>
       </div>
@@ -119,78 +118,79 @@ export default function ConfirmBookingPage() {
   const replyMethod = preferredReply === "email" ? "email" : "WhatsApp";
   const confirmationTime = new Date().toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" });
 
-  // Already confirmed or cancelled
   if (actionDone) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 text-center">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center">
           {actionDone === "confirmed" ? (
             <>
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-              </div>
-              <h2 className="mt-5 text-xl font-semibold text-foreground">Booking Confirmed</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Thank you, {booking["Customer Name"]}! Your booking <span className="font-mono font-bold">{bookingId}</span> has been confirmed.
-              </p>
-              <div className="mt-5 rounded-lg bg-secondary/30 p-4 text-left text-sm">
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">From</p>
-                      <p className="font-medium text-foreground">{booking["Origin Address"] || booking["Pickup Eircode"]}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">To</p>
-                      <p className="font-medium text-foreground">{booking["Destination Address"] || booking["Destination Eircode"]}</p>
-                    </div>
-                  </div>
-                  {booking["Date"] && (
-                    <div className="flex items-start gap-2">
-                      <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Requested Date & Time</p>
-                        <p className="font-medium text-foreground">{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</p>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex items-start gap-2">
-                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Confirmed At</p>
-                      <p className="font-medium text-foreground">{confirmationTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Car className="h-4 w-4 text-accent" />
-                    <span className="text-foreground">{booking["Vehicle Type"]}</span>
-                  </div>
-                  <div className="border-t border-border pt-2">
-                    <p className="text-lg font-bold text-accent">{"\u20AC"}{displayFare}</p>
-                  </div>
+              <div className="mb-4 flex justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-400/10">
+                  <CheckCircle2 className="h-8 w-8 text-green-400" />
                 </div>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Your booking confirmation will be sent to you via <strong>{replyMethod}</strong>. Your driver details will also be shared before your pickup.
+              <h1 className="text-xl font-bold text-foreground">Booking Confirmed</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Thank you, {booking["Customer Name"]}! Your booking {bookingId} has been confirmed.
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <div className="mt-4 space-y-3 text-left text-sm">
+                <div className="flex items-start gap-2">
+                  <MapPin className="mt-0.5 h-4 w-4 text-green-400" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">From</p>
+                    <p className="text-foreground">{booking["Origin Address"] || booking["Pickup Eircode"]}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <MapPin className="mt-0.5 h-4 w-4 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">To</p>
+                    <p className="text-foreground">{booking["Destination Address"] || booking["Destination Eircode"]}</p>
+                  </div>
+                </div>
+                {booking["Date"] && (
+                  <div className="flex items-start gap-2">
+                    <Calendar className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Requested Date & Time</p>
+                      <p className="text-foreground">{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-2">
+                  <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Confirmed At</p>
+                    <p className="text-foreground">{confirmationTime}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Car className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground">{booking["Vehicle Type"]}</span>
+                  </div>
+                  <span className="font-semibold text-foreground">{"\u20AC"}{displayFare}</span>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Your booking confirmation will be sent to you via {replyMethod}. Your driver details will also be shared before your pickup.
+              </p>
+              <p className="mt-2 text-xs font-medium text-primary">
                 Thank you for choosing Redmond Chauffeur Drive.
               </p>
             </>
           ) : (
             <>
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <XCircle className="h-8 w-8 text-muted-foreground" />
+              <div className="mb-4 flex justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-400/10">
+                  <XCircle className="h-8 w-8 text-red-400" />
+                </div>
               </div>
-              <h2 className="mt-5 text-xl font-semibold text-foreground">Booking Cancelled</h2>
+              <h1 className="text-xl font-bold text-foreground">Booking Cancelled</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Thank you for your enquiry, {booking["Customer Name"]}. Your booking <span className="font-mono font-bold">{bookingId}</span> has been cancelled.
+                Thank you for your enquiry, {booking["Customer Name"]}. Your booking {bookingId} has been cancelled.
               </p>
-              <p className="mt-4 text-sm text-muted-foreground">
+              <p className="mt-4 text-xs text-muted-foreground">
                 We appreciate you considering Redmond Chauffeur Drive. Should you need our services in the future, please do not hesitate to get in touch.
               </p>
             </>
@@ -200,57 +200,54 @@ export default function ConfirmBookingPage() {
     );
   }
 
-  // Show confirm/cancel options
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-8">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground">Redmond Chauffeur Drive</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Booking Quote for Reference <span className="font-mono font-bold">{bookingId}</span></p>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6">
+        <div className="mb-4 text-center">
+          <h1 className="text-xl font-bold text-foreground">Redmond Chauffeur Drive</h1>
+          <p className="text-sm text-muted-foreground">Booking Quote for Reference {bookingId}</p>
         </div>
 
-        <div className="mt-6 rounded-lg bg-secondary/30 p-5 text-sm">
-          <div className="space-y-3">
+        <div className="space-y-2 rounded-lg bg-muted/50 p-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Customer:</span>
+            <span className="font-medium text-foreground">{booking["Customer Name"]}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">From:</span>
+            <span className="max-w-[200px] text-right font-medium text-foreground">{booking["Origin Address"] || booking["Pickup Eircode"]}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">To:</span>
+            <span className="max-w-[200px] text-right font-medium text-foreground">{booking["Destination Address"] || booking["Destination Eircode"]}</span>
+          </div>
+          {booking["Date"] && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Customer:</span>
-              <span className="font-medium text-foreground">{booking["Customer Name"]}</span>
+              <span className="text-muted-foreground">Date:</span>
+              <span className="font-medium text-foreground">{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">From:</span>
-              <span className="text-right font-medium text-foreground">{booking["Origin Address"] || booking["Pickup Eircode"]}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">To:</span>
-              <span className="text-right font-medium text-foreground">{booking["Destination Address"] || booking["Destination Eircode"]}</span>
-            </div>
-            {booking["Date"] && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Date:</span>
-                <span className="font-medium text-foreground">{booking["Date"]}{booking["Time"] ? ` at ${booking["Time"]}` : ""}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Vehicle:</span>
-              <span className="font-medium text-foreground">{booking["Vehicle Type"]}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Distance:</span>
-              <span className="font-medium text-foreground">{booking["Distance KM"]} km ({booking["Travel Time"]} mins)</span>
-            </div>
-            <div className="border-t border-border pt-3">
-              <div className="flex justify-between text-lg font-bold">
-                <span className="text-foreground">Exact Fare:</span>
-                <span className="text-accent">{"\u20AC"}{displayFare}</span>
-              </div>
-            </div>
+          )}
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Vehicle:</span>
+            <span className="font-medium text-foreground">{booking["Vehicle Type"]}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Distance:</span>
+            <span className="font-medium text-foreground">{booking["Distance KM"]} km ({booking["Travel Time"]} mins)</span>
+          </div>
+          <div className="flex justify-between border-t border-border pt-2">
+            <span className="font-semibold text-foreground">Exact Fare:</span>
+            <span className="text-lg font-bold text-primary">{"\u20AC"}{displayFare}</span>
           </div>
         </div>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Would you like to confirm this booking?
-        </p>
+        <div className="mt-6 text-center">
+          <p className="mb-4 text-sm text-muted-foreground">
+            Would you like to confirm this booking?
+          </p>
+        </div>
 
-        <div className="mt-5 flex gap-3">
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={() => handleAction("confirm")}
